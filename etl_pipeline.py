@@ -1,47 +1,14 @@
 import json
-import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
 import rasterio
 from rasterio.windows import Window
 
-# Optional Azure Blob Storage integration for Hackathon Cloud Criteria
-try:
-    from azure.storage.blob import BlobServiceClient
-    AZURE_AVAILABLE = True
-except ImportError:
-    AZURE_AVAILABLE = False
-
 RAW_DIR = Path("data/raw")
 PROCESSED_DIR = Path("data/processed")
 SECTOR_SIZE = 4000  # 4,000m x 4,000m (16 sq km) EVA Operational Zone
-
-
-def upload_to_azure_blob(file_paths: list[Path]) -> str:
-    """Uploads compiled terrain matrices to Azure Blob Storage if configured."""
-    conn_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-    container_name = os.getenv("AZURE_CONTAINER_NAME", "marswalk-terrain")
-
-    if not AZURE_AVAILABLE or not conn_str:
-        print("[AZURE] No AZURE_STORAGE_CONNECTION_STRING set. Using local edge storage.")
-        return "local_edge_only"
-
-    try:
-        print(f"[AZURE] Syncing compiled matrices to Azure Blob Container '{container_name}'...")
-        blob_service = BlobServiceClient.from_connection_string(conn_str)
-        container_client = blob_service.get_container_client(container_name)
-        if not container_client.exists():
-            container_client.create_container()
-
-        for path in file_paths:
-            with open(path, "rb") as data:
-                container_client.upload_blob(name=path.name, data=data, overwrite=True)
-            print(f"[AZURE] Uploaded {path.name} ({path.stat().st_size / 1e6:.1f} MB)")
-        return f"synced_to_azure:{container_name}"
-    except Exception as exc:
-        print(f"[AZURE] Warning: Cloud sync skipped ({exc}). Falling back to local storage.")
-        return "local_fallback"
+TARGET_RESOLUTION_M = 100.0  # Downsample target to make the API ultra-lightweight
 
 
 def build_site_bundle():
@@ -49,9 +16,8 @@ def build_site_bundle():
     dem_path = RAW_DIR / "gale_test.tif"
     rems_path = RAW_DIR / "rems_data.tab"
 
-    print(f"[1/4] Window-extracting {SECTOR_SIZE}x{SECTOR_SIZE}m center sector from {dem_path.name}...")
+    print(f"[1/5] Window-extracting {SECTOR_SIZE}x{SECTOR_SIZE}m center sector from {dem_path.name}...")
     with rasterio.open(dem_path) as src:
-        # Target the dead-center of the strip to avoid rotated NoData corners
         row_off = max(0, (src.height // 2) - (SECTOR_SIZE // 2))
         col_off = max(0, (src.width // 2) - (SECTOR_SIZE // 2))
         win_h = min(SECTOR_SIZE, src.height - row_off)
@@ -60,7 +26,6 @@ def build_site_bundle():
         window = Window(col_off, row_off, win_w, win_h)
         dem = src.read(1, window=window).astype(np.float32)
 
-        # Mask out nodata and extreme negative placeholders
         if src.nodata is not None:
             dem = np.where(dem == src.nodata, np.nan, dem)
         dem = np.where(dem < -10000.0, np.nan, dem)
@@ -68,19 +33,26 @@ def build_site_bundle():
         degree_res = float(src.res[0])
         res_m = degree_res * 59270.0 if degree_res < 0.01 else degree_res
 
-    # Track invalid pixels before filling NaNs for gradient math
     nan_mask = np.isnan(dem)
     median_elev = float(np.nanmedian(dem)) if not np.all(nan_mask) else -4500.0
     dem_clean = np.where(nan_mask, median_elev, dem)
 
-    print("[2/4] Computing physical slope gradients...")
+    print(f"[2/5] Downsampling native {round(res_m, 1)}m grid to {TARGET_RESOLUTION_M}m...")
+    if res_m < TARGET_RESOLUTION_M:
+        stride = int(TARGET_RESOLUTION_M / res_m)
+        dem_clean = dem_clean[::stride, ::stride]
+        nan_mask = nan_mask[::stride, ::stride]
+        res_m = res_m * stride
+        print(f"      -> Grid reduced by a factor of {stride}x (ultra-lightweight).")
+    else:
+        print("      -> Source resolution already exceeds target. Stride skipped.")
+
+    print("[3/5] Computing physical slope gradients on the lightweight grid...")
     dy, dx = np.gradient(dem_clean, res_m)
     slope_deg = np.degrees(np.arctan(np.hypot(dx, dy))).astype(np.float32)
-
-    # Mark any original NoData pixels as 90-degree impassable walls
     slope_deg = np.where(nan_mask, 90.0, slope_deg)
 
-    print(f"[3/4] Parsing Curiosity REMS weather telemetry from {rems_path.name}...")
+    print(f"[4/5] Parsing Curiosity REMS weather telemetry from {rems_path.name}...")
     hourly_telemetry = []
     if rems_path.exists():
         df = pd.read_csv(
@@ -109,7 +81,7 @@ def build_site_bundle():
             for hr in range(24)
         ]
 
-    print("[4/4] Saving uncompressed memory-mappable binaries (.npy)...")
+    print("[5/5] Saving ultra-lightweight memory-mappable binaries (.npy)...")
     dem_out = PROCESSED_DIR / "dem.npy"
     slope_out = PROCESSED_DIR / "slope.npy"
     meta_out = PROCESSED_DIR / "site_metadata.json"
@@ -120,12 +92,9 @@ def build_site_bundle():
     width_m = float(dem_clean.shape[1] * res_m)
     height_m = float(dem_clean.shape[0] * res_m)
 
-    azure_status = upload_to_azure_blob([dem_out, slope_out])
-
     metadata = {
         "site_name": "Gale Crater - Mount Sharp EVA Sector",
-        "cloud_provider": "Microsoft Azure Hybrid Edge",
-        "azure_blob_status": azure_status,
+        "storage_status": "local_mmap_cache",
         "grid_shape": [int(dem_clean.shape[0]), int(dem_clean.shape[1])],
         "resolution_m": round(res_m, 2),
         "extent_m": {"width": round(width_m, 2), "height": round(height_m, 2)},
@@ -134,9 +103,9 @@ def build_site_bundle():
             "max": round(float(np.max(dem_clean)), 2),
         },
         "waypoints": [
-            {"id": "hab_alpha", "x": 200, "y": 200},
-            {"id": "wp_ridge", "x": 1500, "y": 1800},
-            {"id": "wp_boxwork", "x": 3200, "y": 3200},
+            {"id": "hab_alpha", "x": 2, "y": 2},
+            {"id": "wp_ridge", "x": 15, "y": 18},
+            {"id": "wp_boxwork", "x": 32, "y": 32},
         ],
         "hourly_telemetry": hourly_telemetry,
     }
@@ -144,10 +113,7 @@ def build_site_bundle():
     with open(meta_out, "w") as f:
         json.dump(metadata, f, indent=2)
 
-    if AZURE_AVAILABLE and os.getenv("AZURE_STORAGE_CONNECTION_STRING"):
-        upload_to_azure_blob([meta_out])
-
-    print("\n[SUCCESS] Memory-mapped terrain bundle ready in <2 seconds.")
+    print("\n[SUCCESS] Memory-mapped terrain bundle ready. Footprint: <20 KB.")
 
 
 if __name__ == "__main__":
