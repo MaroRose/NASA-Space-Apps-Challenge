@@ -37,10 +37,7 @@ class PathFinder {
         this.startPoint = new PVector(startRow.getFloat("xStartPosition"), startRow.getFloat("yStartPosition"));
         this.endPoint = new PVector(startRow.getFloat("xEndPosition"), startRow.getFloat("yEndPosition"));
 
-        //parse the missionTable for the start PVector and the end PVector
-        this.width = (int) startRow.getFloat("width");
-        this.height = (int) startRow.getFloat("height");
-
+  
 
         // set grid size
         if (this.width <= 0 || this.height <= 0) {
@@ -143,6 +140,7 @@ class PathFinder {
         return !Float.isNaN(elevation) && !Float.isInfinite(elevation);
     }
 
+    //Update heuristic function to account for other factors such as elevation differences, fuel loss, ect...
     private float heuristic(int x, int y, int endX, int endY) {
         return PVector.dist(new PVector(x, y), new PVector(endX, endY));
     }
@@ -257,6 +255,19 @@ class PathFinder {
         }
 
         throw new IllegalStateException("No traversable path exists between the mission points.");
+    }
+
+    //Output data to MissionOutputData.csv
+
+    public void outputPathData(String outputFile){
+        PrintWriter output = createWriter(outputFile);
+        output.println("xPosition,yPosition");
+        for (PVector point : this.path) {
+            output.println(point.x + "," + point.y);
+        }
+        output.close();
+
+
     }
 
 }

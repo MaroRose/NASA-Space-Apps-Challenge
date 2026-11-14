@@ -8,7 +8,7 @@ void settings() {
 
 void setup(){
   println("Loading Elevation Map...");
-  img = loadImage("data/Lunar_Elevation_Map.jpg");
+  img = loadImage("data/galesample_1024.jpg");
   println("Elevation Map Loaded.");
   windowResize(img.width, img.height);
 
@@ -50,7 +50,7 @@ void draw() {
     noLoop();
 
     pathFinder = new PathFinder("data/Elevation.csv", "data/MissionInputData.csv", img.width, img.height);
-
+    
     pathFinder.calculatePath();
   }
 
@@ -61,7 +61,7 @@ void draw() {
   beginShape();
   for (int i = 0; i < pathFinder.getPath().size(); i++) {
     vertex(pathFinder.getPathPoint(i).x, pathFinder.getPathPoint(i).y);
-    println("Path point: " + pathFinder.getPathPoint(i).x + ", " + pathFinder.getPathPoint(i).y);
+    // println("Path point: " + pathFinder.getPathPoint(i).x + ", " + pathFinder.getPathPoint(i).y);
   }
   endShape();
 
@@ -88,3 +88,5 @@ void draw() {
   noStroke();
   text("Coordinates: " + "(" + logitude + " , " + latitude + " , " + elevation + ")", 0, height - 10);
 }
+
+
