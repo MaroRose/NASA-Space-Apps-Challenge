@@ -1,4 +1,8 @@
-const API_BASE = "http://127.0.0.1:8000/api/v1";
+// In production the frontend is served by FastAPI itself, so the API is
+// same-origin ("/api/v1"). In dev (npm run dev) we talk to local uvicorn.
+const API_BASE = import.meta.env.PROD
+  ? "/api/v1"
+  : "http://127.0.0.1:8000/api/v1";
 
 export async function fetchRoutePlan({
   startX,
@@ -28,17 +32,3 @@ export async function fetchRoutePlan({
 
   return response.json();
 }
-async function test() {
-  try {
-    const testData = await fetchRoutePlan({
-      startX: 100,
-      startY: 100,
-      endX: 200,
-      endY: 200,
-    });
-    console.log(testData);
-  } catch (err) {
-    console.log(err);
-  }
-}
-test();
