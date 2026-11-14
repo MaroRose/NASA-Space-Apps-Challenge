@@ -1,0 +1,17 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+data/raw/
+data/processed/
+*.npy
+*.npz
+*.IMG
+*.tif
+*.tiff
+*.TAB
+*.tab
+.DS_Store
+.vscode/
