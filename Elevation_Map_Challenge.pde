@@ -49,7 +49,7 @@ void draw() {
     output.close();
     noLoop();
 
-    pathFinder = new PathFinder("data/Elevation.csv", "data/MissionInputData.csv");
+    pathFinder = new PathFinder("data/Elevation.csv", "data/MissionInputData.csv", img.width, img.height);
 
     pathFinder.calculatePath();
   }
@@ -61,6 +61,7 @@ void draw() {
   beginShape();
   for (int i = 0; i < pathFinder.getPath().size(); i++) {
     vertex(pathFinder.getPathPoint(i).x, pathFinder.getPathPoint(i).y);
+    println("Path point: " + pathFinder.getPathPoint(i).x + ", " + pathFinder.getPathPoint(i).y);
   }
   endShape();
 

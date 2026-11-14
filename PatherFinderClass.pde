@@ -10,10 +10,12 @@ class PathFinder {
     private float[][] mapGrid;
     private PVector[][] parentGrid;
 
-    public PathFinder(String mapFile, String missionFile) {
+    public PathFinder(String mapFile, String missionFile, int width, int height) {
         this.mapFile = mapFile;
         this.missionFile = missionFile;
         this.path = new ArrayList<PVector>();
+        this.width = width;
+        this.height = height;
     }
 
     private void loadMapElevationData(){
