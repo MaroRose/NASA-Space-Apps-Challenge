@@ -55,15 +55,29 @@ uvicorn main:app --reload --port 8000
 
 The API runs at `http://127.0.0.1:8000`, with interactive docs at `http://127.0.0.1:8000/docs`.
 
-If there are no processed terrain files in `backend/data/processed/`, the server generates a synthetic Gale Crater grid, so you can develop without the NASA data.
+If there are no GeoTIFFs in `gale_tiles/`, the server generates an in-memory synthetic Gale Crater grid, so you can develop without the NASA data.
 
-To run the terrain pipeline as well, install the full requirements with `pip install -r requirements.txt`, which adds pandas, rasterio and the Azure SDK. Put `gale_test.tif` and `rems_data.tab` in `backend/data/raw/`, then run:
+To prepare the tiled Gale DEM, install the full requirements with `pip install -r requirements.txt`, then run these commands from the repository root:
 
 ```bash
+python split_gale_dem.py
+cd backend
 python etl_pipeline.py
 ```
 
+The ETL pipeline scans the GeoTIFF tiles one at a time and writes site metadata; the API loads only the tiles needed for terrain queries and routes. `backend/data/raw/rems_data.tab` is optional and supplies weather telemetry when present.
+
 To upload the results to Azure, set `AZURE_STORAGE_CONNECTION_STRING` before running the pipeline. `AZURE_CONTAINER_NAME` is optional and defaults to `marswalk-terrain`.
+
+### Split the Gale DEM into tiles
+
+With rasterio installed (included in `backend/requirements.txt`), run from the repository root:
+
+```bash
+python split_gale_dem.py
+```
+
+This writes 100 GeoTIFFs to `gale_tiles/`, arranged as 10 rows by 10 columns. Tile names encode row and column, starting at the northwest corner; each tile retains its geographic transform and source CRS. Use `--input` and `--output-dir` to provide alternate paths.
 
 ### 2. Frontend
 

@@ -8,15 +8,17 @@ from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 from pydantic import BaseModel, Field
 import router_engine
+from terrain_tiles import TiledRasterGrid
 
 PROCESSED_DIR = Path(__file__).resolve().parent / "data" / "processed"
+TILES_DIR = Path(__file__).resolve().parent.parent / "gale_tiles"
 martian_state = {}
 
 
 def _generate_teammate_fallback_grid(size: int = 1000):
-    """Generates a synthetic Gale Crater grid if a teammate clones the repo without the 5.4GB NASA TIF."""
+    """Generate an in-memory synthetic grid when neither tiles nor source data exist."""
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-    print("[BOOT] Local NASA .npy files not found. Generating synthetic Gale Crater fallback grid for dev...")
+    print("[BOOT] Gale tiles not found. Generating synthetic Gale Crater fallback grid for dev...")
     y, x = np.mgrid[0:size, 0:size].astype(np.float32)
     dem = (
         -4500.0
@@ -25,9 +27,6 @@ def _generate_teammate_fallback_grid(size: int = 1000):
     ).astype(np.float32)
     dy, dx = np.gradient(dem, 1.0)
     slope = np.degrees(np.arctan(np.hypot(dx, dy))).astype(np.float32)
-
-    np.save(PROCESSED_DIR / "dem.npy", dem)
-    np.save(PROCESSED_DIR / "slope.npy", slope)
 
     metadata = {
         "site_name": "Gale Crater - Mount Sharp (Synthetic Teammate Dev Grid)",
@@ -48,30 +47,86 @@ def _generate_teammate_fallback_grid(size: int = 1000):
     }
     with open(PROCESSED_DIR / "site_metadata.json", "w") as f:
         json.dump(metadata, f, indent=2)
+    return dem, slope
 
 
 def ensure_local_terrain_grid() -> str:
-    """Loads local mmap files if present, or builds a synthetic dev grid for teammates."""
-    dem_file = PROCESSED_DIR / "dem.npy"
-    slope_file = PROCESSED_DIR / "slope.npy"
+    """Set up lazy tiled terrain data, or use an in-memory synthetic dev grid."""
     meta_file = PROCESSED_DIR / "site_metadata.json"
 
-    if dem_file.exists() and slope_file.exists() and meta_file.exists():
-        return "local_mmap_cache"
+    tile_files = list(TILES_DIR.glob("tile_r*_c*.tif"))
+    if tile_files:
+        terrain = TiledRasterGrid(TILES_DIR)
+        if meta_file.exists():
+            with open(meta_file) as f:
+                metadata = json.load(f)
+        else:
+            metadata = {}
 
-    _generate_teammate_fallback_grid()
+        grid_shape = list(terrain.shape)
+        if (
+            metadata.get("grid_shape") != grid_shape
+            or metadata.get("storage_status") != "local_tiled_cache"
+        ):
+            metadata.update(
+                {
+                    "site_name": "Gale Crater - Mount Sharp EVA Sector",
+                    "cloud_provider": "Microsoft Azure Hybrid Edge",
+                    "storage_status": "local_tiled_cache",
+                    "grid_shape": grid_shape,
+                    "resolution_m": round(terrain.resolution_m, 2),
+                    "extent_m": {
+                        "width": round(terrain.shape[1] * terrain.resolution_m, 2),
+                        "height": round(terrain.shape[0] * terrain.resolution_m, 2),
+                    },
+                }
+            )
+            metadata.pop("elevation_stats_m", None)
+            metadata.setdefault(
+                "waypoints",
+                [
+                    {"id": "hab_alpha", "x": 200, "y": 200},
+                    {"id": "wp_ridge", "x": 1500, "y": 1800},
+                    {"id": "wp_boxwork", "x": 3200, "y": 3200},
+                ],
+            )
+            metadata.setdefault(
+                "hourly_telemetry",
+                [
+                    {"sol_hour": hr, "ambient_temp_c": -65.0, "radiation_mgy_hr": 0.011}
+                    for hr in range(24)
+                ],
+            )
+            PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+            with open(meta_file, "w") as f:
+                json.dump(metadata, f, indent=2)
+
+        martian_state["dem"] = terrain.dem
+        martian_state["slope"] = terrain.slope
+        martian_state["metadata"] = metadata
+        martian_state["terrain"] = terrain
+        martian_state["storage_mode"] = "local_tiled_cache"
+        print(
+            f"[BOOT] Tiled terrain indexed ({terrain.shape[1]}x{terrain.shape[0]}); "
+            "tiles load on demand."
+        )
+        return "local_tiled_cache"
+
+    dem, slope = _generate_teammate_fallback_grid()
+    with open(meta_file) as f:
+        metadata = json.load(f)
+    martian_state["dem"] = dem
+    martian_state["slope"] = slope
+    martian_state["metadata"] = metadata
+    martian_state["storage_mode"] = "synthetic_dev_fallback"
     return "synthetic_dev_fallback"
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     storage_mode = ensure_local_terrain_grid()
-    martian_state["dem"] = np.load(PROCESSED_DIR / "dem.npy", mmap_mode="r")
-    martian_state["slope"] = np.load(PROCESSED_DIR / "slope.npy", mmap_mode="r")
-    with open(PROCESSED_DIR / "site_metadata.json") as f:
-        martian_state["metadata"] = json.load(f)
     martian_state["storage_mode"] = storage_mode
-    print(f"[BOOT] Martian Terrain memory-mapped in <5ms ({storage_mode}). Ready.")
+    print(f"[BOOT] Martian terrain ready ({storage_mode}).")
     yield
     martian_state.clear()
 

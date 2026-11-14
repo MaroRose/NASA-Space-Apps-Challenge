@@ -1,10 +1,16 @@
 import heapq
 import math
 import time
-import numpy as np
+from typing import Protocol
 
 
-def _find_nearest_safe_cell(x: int, y: int, slope: np.ndarray, max_slope: float, radius: int = 25):
+class GridLike(Protocol):
+    shape: tuple[int, int]
+
+    def __getitem__(self, index: tuple[int, int]) -> float: ...
+
+
+def _find_nearest_safe_cell(x: int, y: int, slope: GridLike, max_slope: float, radius: int = 25):
     """If the requested start/end coordinate sits on a rock (>max_slope), snap to nearest flat pixel."""
     rows, cols = slope.shape
     if 0 <= x < cols and 0 <= y < rows and slope[y, x] <= max_slope:
@@ -24,8 +30,8 @@ def calculate_path(
     start_y: int,
     end_x: int,
     end_y: int,
-    dem: np.ndarray,
-    slope: np.ndarray,
+    dem: GridLike,
+    slope: GridLike,
     max_slope_deg: float = 20.0,
 ) -> dict:
     t0 = time.perf_counter()
