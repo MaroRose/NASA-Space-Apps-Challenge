@@ -31,45 +31,28 @@ float elevationAt(String elevationCSV, float x, float y){
 
 void draw() {
   image(img, 0, 0);
-  img.loadPixels();
 
-  PrintWriter output = createWriter("data/Elevation.csv");
-  output.println("xPosition,yPosition,zPosition");
+  if (pathFinder == null) {
+    img.loadPixels();
 
-  for (int x = 0; x < img.width; x++) {
-  for (int y = 0; y < img.height; y++) {
-    int rowOffset = y * img.width;
-    
-      float z = brightness(img.pixels[rowOffset + x]);
-      output.println(x + "," + y + "," + z);
+    PrintWriter output = createWriter("data/Elevation.csv");
+    output.println("xPosition,yPosition,zPosition");
+
+    for (int x = 0; x < img.width; x++) {
+      for (int y = 0; y < img.height; y++) {
+        int rowOffset = y * img.width;
+        float z = brightness(img.pixels[rowOffset + x]);
+        output.println(x + "," + y + "," + z);
+      }
     }
+
+    output.close();
+    noLoop();
+
+    pathFinder = new PathFinder("data/Elevation.csv", "data/MissionInputData.csv");
+
+    pathFinder.calculatePath();
   }
-
-  output.close();
-  noLoop();
-
-  pathFinder = new PathFinder("data/Elevation.csv", "data/MissionInputData.csv");
-
-  pathFinder.loadMapData();
-  pathFinder.loadMissionData();
-
-  PVector startPoint = pathFinder.getStartPoint();
-  PVector endPoint = pathFinder.getEndPoint();
-
-  pathFinder.addPathPoint(startPoint);
-  
-  PVector[] samplePoints = {new PVector(100,200), new PVector(150,250), new PVector(200,300)};
-
-  for(int i = 0; i < samplePoints.length; i++){
-    PVector samplePoint = samplePoints[i];
-    pathFinder.addPathPoint(samplePoint);
-  }
-
-  // Print the neighbors of the sample point
-  // PVector[] neighbors = pathFinder.getNeighbors(samplePoint);
-  // for(int i = 0; i < neighbors.length; i++){
-  //   println("Neighbor " + i + ": " + neighbors[i]);
-  // }
 
   // Draw the path on the image
   strokeWeight(1);
@@ -81,11 +64,12 @@ void draw() {
   }
   endShape();
 
-  for(int i = 0; i < pathFinder.getPath().size(); i++) {
-    strokeWeight(5);
-    stroke(0);
-    point(pathFinder.getPathPoint(i).x, pathFinder.getPathPoint(i).y);
-  }
+  //display point at start and end positions
+  strokeWeight(5);
+  stroke(255, 0, 0);
+  point(pathFinder.getStartPoint().x, pathFinder.getStartPoint().y);
+  stroke(0, 0, 255);
+  point(pathFinder.getEndPoint().x, pathFinder.getEndPoint().y);
 
   finalPath = pathFinder.getPath();
 
