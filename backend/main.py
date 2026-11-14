@@ -9,7 +9,7 @@ import numpy as np
 from pydantic import BaseModel, Field
 import router_engine
 
-PROCESSED_DIR = Path("data/processed")
+PROCESSED_DIR = Path(__file__).resolve().parent / "data" / "processed"
 martian_state = {}
 
 

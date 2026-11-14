@@ -13,8 +13,8 @@ try:
 except ImportError:
     AZURE_AVAILABLE = False
 
-RAW_DIR = Path("data/raw")
-PROCESSED_DIR = Path("data/processed")
+RAW_DIR = Path(__file__).resolve().parent / "data" / "raw"
+PROCESSED_DIR = Path(__file__).resolve().parent / "data" / "processed"
 SECTOR_SIZE = 4000  # 4,000m x 4,000m (16 sq km) EVA Operational Zone
 
 
