@@ -1,16 +1,19 @@
 PImage img;
-AStar pathFinder;
-PVector start,end;
-PVector[] path;
+PathFinder pathFinder;
+ArrayList<PVector> finalPath;
 
 void settings() {
   size(100,100);
 }
 
 void setup(){
+  println("Loading Elevation Map...");
   img = loadImage("data/Lunar_Elevation_Map.jpg");
-
+  println("Elevation Map Loaded.");
   windowResize(img.width, img.height);
+
+  finalPath = new ArrayList<PVector>();
+
 }
 
 float elevationAt(String elevationCSV, float x, float y){
@@ -45,32 +48,46 @@ void draw() {
   output.close();
   noLoop();
 
-  pathFinder = new AStar("data/Elevation.csv", "data/missionInputData.csv");
+  pathFinder = new PathFinder("data/Elevation.csv", "data/MissionInputData.csv");
 
-  // start = pathFinder.getStartPoint();
-  // end = pathFinder.getEndPoint();
-  // path = pathFinder.getPath();
+  pathFinder.loadMapData();
+  pathFinder.loadMissionData();
 
-  start = new PVector(0, 0);
-  end = new PVector(100,100);
-  path = new PVector[] { start, end };
+  PVector startPoint = pathFinder.getStartPoint();
+  PVector endPoint = pathFinder.getEndPoint();
+
+  pathFinder.addPathPoint(startPoint);
+  
+  PVector[] samplePoints = {new PVector(100,200), new PVector(150,250), new PVector(200,300)};
+
+  for(int i = 0; i < samplePoints.length; i++){
+    PVector samplePoint = samplePoints[i];
+    pathFinder.addPathPoint(samplePoint);
+  }
+
+  // Print the neighbors of the sample point
+  // PVector[] neighbors = pathFinder.getNeighbors(samplePoint);
+  // for(int i = 0; i < neighbors.length; i++){
+  //   println("Neighbor " + i + ": " + neighbors[i]);
+  // }
 
   // Draw the path on the image
+  strokeWeight(1);
   stroke(255);
   noFill();
   beginShape();
-  for (int i = 0; i < path.length; i++) {
-    vertex(path[i].x, path[i].y);
+  for (int i = 0; i < pathFinder.getPath().size(); i++) {
+    vertex(pathFinder.getPathPoint(i).x, pathFinder.getPathPoint(i).y);
   }
   endShape();
 
-  // Draw the start and end points
-  noStroke();
-  fill(0, 255, 0);
-  ellipse(start.x, start.y, 10, 10);
-  fill(255, 0, 0);
-  ellipse(end.x, end.y, 10, 10);
+  for(int i = 0; i < pathFinder.getPath().size(); i++) {
+    strokeWeight(5);
+    stroke(0);
+    point(pathFinder.getPathPoint(i).x, pathFinder.getPathPoint(i).y);
+  }
 
+  finalPath = pathFinder.getPath();
 
   loop();
   //Display text to show the longitude and latitude coordinates as the user hovers the mouse over the window
