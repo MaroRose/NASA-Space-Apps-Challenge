@@ -1,7 +1,6 @@
 from contextlib import asynccontextmanager
 import json
 import math
-import os
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Query
@@ -9,12 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 from pydantic import BaseModel, Field
 import router_engine
-
-try:
-    from azure.storage.blob import BlobServiceClient
-    AZURE_SDK = True
-except ImportError:
-    AZURE_SDK = False
 
 PROCESSED_DIR = Path("data/processed")
 martian_state = {}
@@ -38,8 +31,7 @@ def _generate_teammate_fallback_grid(size: int = 1000):
 
     metadata = {
         "site_name": "Gale Crater - Mount Sharp (Synthetic Teammate Dev Grid)",
-        "cloud_provider": "Microsoft Azure Hybrid Edge",
-        "azure_blob_status": "synthetic_dev_fallback",
+        "storage_status": "synthetic_dev_fallback",
         "grid_shape": [size, size],
         "resolution_m": 1.0,
         "extent_m": {"width": float(size), "height": float(size)},
@@ -58,8 +50,8 @@ def _generate_teammate_fallback_grid(size: int = 1000):
         json.dump(metadata, f, indent=2)
 
 
-def sync_from_azure_if_needed():
-    """Loads local mmap files, pulls from Azure Blob if configured, or builds a dev fallback for teammates."""
+def ensure_local_terrain_grid() -> str:
+    """Loads local mmap files if present, or builds a synthetic dev grid for teammates."""
     dem_file = PROCESSED_DIR / "dem.npy"
     slope_file = PROCESSED_DIR / "slope.npy"
     meta_file = PROCESSED_DIR / "site_metadata.json"
@@ -67,29 +59,13 @@ def sync_from_azure_if_needed():
     if dem_file.exists() and slope_file.exists() and meta_file.exists():
         return "local_mmap_cache"
 
-    conn_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-    container_name = os.getenv("AZURE_CONTAINER_NAME", "marswalk-terrain")
-
-    if AZURE_SDK and conn_str:
-        try:
-            PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-            print(f"[AZURE BOOT] Pulling terrain matrices from Azure Blob '{container_name}'...")
-            blob_service = BlobServiceClient.from_connection_string(conn_str)
-            container = blob_service.get_container_client(container_name)
-            for fname in ["dem.npy", "slope.npy", "site_metadata.json"]:
-                with open(PROCESSED_DIR / fname, "wb") as f:
-                    f.write(container.download_blob(fname).readall())
-            return f"azure_blob_synced:{container_name}"
-        except Exception as exc:
-            print(f"[AZURE WARNING] Could not pull from Azure ({exc}). Using synthetic dev fallback.")
-
     _generate_teammate_fallback_grid()
     return "synthetic_dev_fallback"
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    storage_mode = sync_from_azure_if_needed()
+    storage_mode = ensure_local_terrain_grid()
     martian_state["dem"] = np.load(PROCESSED_DIR / "dem.npy", mmap_mode="r")
     martian_state["slope"] = np.load(PROCESSED_DIR / "slope.npy", mmap_mode="r")
     with open(PROCESSED_DIR / "site_metadata.json") as f:
@@ -101,7 +77,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="MarsWalk: Azure-Hybrid Martian EVA Navigation API",
+    title="MarsWalk: Martian EVA Navigation API",
     version="1.1.0",
     lifespan=lifespan,
 )
@@ -121,18 +97,14 @@ class PointCoord(BaseModel):
 
 
 class RouteRequest(BaseModel):
-    # Flat coordinate inputs (accepts ints or floats from JS mouse clicks)
     start_x: Optional[float] = Field(None, description="Start X grid coordinate")
     start_y: Optional[float] = Field(None, description="Start Y grid coordinate")
     end_x: Optional[float] = Field(None, description="Target X grid coordinate")
     end_y: Optional[float] = Field(None, description="Target Y grid coordinate")
-    # Optional nested coordinate inputs: {"start": {"x": 100, "y": 100}, "end": {"x": 500, "y": 500}}
     start: Optional[PointCoord] = None
     end: Optional[PointCoord] = None
-    # Optional waypoint ID inputs: {"start_waypoint": "hab_alpha", "end_waypoint": "wp_ridge"}
     start_waypoint: Optional[str] = None
     end_waypoint: Optional[str] = None
-    # Rover safety configuration
     max_slope_deg: float = Field(20.0, gt=1.0, le=45.0, description="Max allowable slope in degrees")
 
 
@@ -159,7 +131,6 @@ def _resolve_coordinates(req: RouteRequest, meta: dict, rows: int, cols: int) ->
             detail="Provide start_x/start_y & end_x/end_y, nested start/end objects, or valid start_waypoint/end_waypoint IDs.",
         )
 
-    # Round floats and clamp to valid matrix indices so frontend clicks near edges never crash
     clamped_sx = max(0, min(cols - 1, int(round(sx))))
     clamped_sy = max(0, min(rows - 1, int(round(sy))))
     clamped_ex = max(0, min(cols - 1, int(round(ex))))
@@ -191,7 +162,7 @@ def _execute_routing(req: RouteRequest) -> dict:
 
     return {
         "status": "success",
-        "azure_storage_tier": martian_state["storage_mode"],
+        "storage_mode": martian_state["storage_mode"],
         "compute_ms": result["compute_ms"],
         "resolved_start": {"x": sx, "y": sy},
         "resolved_end": {"x": ex, "y": ey},
@@ -208,7 +179,6 @@ def _execute_routing(req: RouteRequest) -> dict:
 async def health_check():
     return {
         "status": "online",
-        "cloud_integration": "Microsoft Azure Blob Storage + FastAPI Edge",
         "storage_mode": martian_state.get("storage_mode", "unknown"),
         "grid_shape": list(martian_state["dem"].shape),
     }
