@@ -207,6 +207,42 @@ async def inspect_point(x: float = Query(...), y: float = Query(...)):
     }
 
 
+@app.get("/api/v1/terrain/points")
+async def inspect_points(
+    min_x: int = Query(..., ge=0),
+    min_y: int = Query(..., ge=0),
+    max_x: int = Query(..., ge=0),
+    max_y: int = Query(..., ge=0),
+    step_size: int = Query(..., gt=0),
+):
+    """Returns terrain data for each grid point in the inclusive bounds."""
+    dem = martian_state["dem"]
+    slope = martian_state["slope"]
+    rows, cols = dem.shape
+
+    if min_x > max_x or min_y > max_y:
+        raise HTTPException(
+            status_code=422,
+            detail="Minimum coordinates must not exceed maximum coordinates.",
+        )
+    if max_x >= cols or max_y >= rows:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Coordinates must be within the terrain grid (x: 0-{cols - 1}, y: 0-{rows - 1}).",
+        )
+
+    return [
+        {
+            "x": x,
+            "y": y,
+            "elev_m": round(float(dem[y, x]), 2),
+            "slope_deg": round(float(slope[y, x]), 2),
+        }
+        for x in range(min_x, max_x + 1, step_size)
+        for y in range(min_y, max_y + 1, step_size)
+    ]
+
+
 @app.post("/api/v1/route/plan")
 @app.post("/api/v1/route")
 async def calculate_route_post(request: RouteRequest):
