@@ -1,7 +1,11 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
+# Build the Vite frontend, bundle it into the FastAPI backend, and deploy
+# the backend folder to Azure Web App (Python runtime).
+# Azure app settings required (set in Portal -> Configuration):
+#   WEBSITES_PORT = 8000
+#   SCM_DO_BUILD_DURING_DEPLOYMENT = true
+# Startup command: python -m uvicorn main:app --host 0.0.0.0 --port 8000
 
-name: Build and deploy Node.js app to Azure Web App - NASA-Space-Apps
+name: Build and deploy MarsWalk (FastAPI + Vite) to Azure Web App - NASA-Space-Apps
 
 on:
   push:
@@ -13,7 +17,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -23,21 +27,22 @@ jobs:
         with:
           node-version: '26.x'
 
-      - name: Run npm install
-        run: npm install
+      - name: Install and build frontend
+        run: |
+          npm install
+          npm run build
         working-directory: ./frontend
 
-      - name: Build
-        run: npm run build
-        working-directory: ./frontend
+      - name: Copy frontend build into backend/static
+        run: |
+          rm -rf backend/static
+          cp -r frontend/dist backend/static
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: node-app
-          path: |
-            frontend
-            !frontend/node_modules
+          name: python-app
+          path: backend
 
   deploy:
     runs-on: ubuntu-latest
@@ -50,8 +55,8 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: node-app
-      
+          name: python-app
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -66,4 +71,3 @@ jobs:
           app-name: 'NASA-Space-Apps'
           slot-name: 'Production'
           package: .
-          
