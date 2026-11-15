@@ -27,10 +27,6 @@ const PLACING_OPTIONS: { target: PlacingTarget; label: string }[] = [
   { target: "end", label: "Destination" },
 ];
 
-function formatCell(cell: GridCell | null) {
-  return cell ? `(${cell.x}, ${cell.y})` : "—";
-}
-
 function StatTile({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div
@@ -162,15 +158,10 @@ export function RoutePanel({
                 <span style={{ fontWeight: 600, fontSize: 12 }}>{label}</span>
                 <span
                   className="mono"
-                  style={{ fontSize: 11, color: "var(--text-muted)" }}
+                  style={{ fontSize: 10, color: "var(--text-muted)" }}
                 >
-                  {formatCell(target === "start" ? start : end)}
+                  {latLonOf(target === "start" ? start : end) ?? "—"}
                 </span>
-                {latLonOf(target === "start" ? start : end) && (
-                  <span className="mono" style={{ fontSize: 10, color: "var(--text-muted)" }}>
-                    {latLonOf(target === "start" ? start : end)}
-                  </span>
-                )}
               </button>
             );
           })}
@@ -257,14 +248,8 @@ export function RoutePanel({
             }}
           >
             <span>{wp.id}</span>
-            <span className="mono" style={{ textAlign: "right" }}>
-              ({wp.x}, {wp.y})
-              {latLonOf(wp) && (
-                <>
-                  <br />
-                  <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{latLonOf(wp)}</span>
-                </>
-              )}
+            <span className="mono" style={{ fontSize: 10, color: "var(--text-muted)" }}>
+              {latLonOf(wp) ?? "—"}
             </span>
           </div>
         ))}

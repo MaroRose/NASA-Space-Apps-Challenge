@@ -249,18 +249,27 @@ export function TerrainMap({
         </Marker>
       )}
       {layers.waypoints &&
-        pois.map((wp) => (
-          <Marker
-            key={wp.id}
-            position={cellToLatLng(wp.x, wp.y)}
-            icon={poiIcon}
-            eventHandlers={{ click: () => onPointPick?.(wp.x, wp.y) }}
-          >
-            <Tooltip permanent direction="right" offset={[10, 0]} className="wp-label">
-              {wp.id}
-            </Tooltip>
-          </Marker>
-        ))}
+        pois.map((wp, index) => {
+          // Alternate label sides so neighbouring waypoints don't overprint each other.
+          const direction = index % 2 === 0 ? "right" : "left";
+          return (
+            <Marker
+              key={wp.id}
+              position={cellToLatLng(wp.x, wp.y)}
+              icon={poiIcon}
+              eventHandlers={{ click: () => onPointPick?.(wp.x, wp.y) }}
+            >
+              <Tooltip
+                permanent
+                direction={direction}
+                offset={[direction === "right" ? 10 : -10, 0]}
+                className="wp-label"
+              >
+                {wp.id}
+              </Tooltip>
+            </Marker>
+          );
+        })}
 
       {layers.route && routeStart && (
         <CircleMarker

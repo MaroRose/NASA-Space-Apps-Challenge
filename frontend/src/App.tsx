@@ -204,10 +204,7 @@ function App() {
                 >
                   POINT INSPECTOR
                 </span>
-                <span>
-                  cell ({inspected.x}, {inspected.y})
-                </span>
-                {inspectedLatLon && <span>{inspectedLatLon}</span>}
+                <span>{inspectedLatLon ?? "position unavailable"}</span>
                 <span>elev {inspected.elev_m.toFixed(1)} m</span>
                 <span
                   style={{

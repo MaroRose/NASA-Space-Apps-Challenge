@@ -147,7 +147,6 @@ export function PositionPanel({
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <Row label="Cell" value={position ? `(${position.x}, ${position.y})` : "—"} />
         <Row label="Mars coordinates" value={posLatLon ? formatLatLon(posLatLon) : "—"} />
         <Row label="Distance to habitat" value={toHome !== null ? `${toHome.toFixed(0)} m` : "—"} />
         <Row
