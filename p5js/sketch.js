@@ -96,11 +96,13 @@ new window.p5((p) => {
       p.resizeCanvas(width, height);
       missionDownload.disabled = false;
       pathDownload.disabled = false;
+
       metricsElement.textContent =
         `Path length: ${pathFinder.calculateTotalPathLength().toFixed(2)} | ` +
         `Time: ${pathFinder.calculateTotalTime()} | ` +
         `Fuel cost: ${pathFinder.calculateFuelCost()} | ` +
         `Payload: ${pathFinder.payloadWeight}`;
+
       const metadataFile = metadataHandler.getJSON().metadata?.file;
       setStatus(metadataFile ? `Map ready. Metadata source: ${metadataFile}` : "Map ready.");
     } catch (error) {

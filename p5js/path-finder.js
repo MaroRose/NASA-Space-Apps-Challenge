@@ -260,6 +260,6 @@ export class PathFinder {
   }
 
   pathOutputCsv() {
-    return ["xPosition,yPosition", ...this.path.map(({ x, y }) => `${x},${y}`)].join("\n");
+    return ["xPosition,yPosition,zPosition", ...this.path.map(({ x, y, z}) => `${x},${y},${z}`)].join("\n");
   }
 }
