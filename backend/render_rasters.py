@@ -20,6 +20,17 @@ CAUTION_RGBA = (245, 165, 36, 110)
 NO_GO_RGBA = (229, 72, 77, 170)
 SHADOW_RGB = np.array([36, 22, 16], dtype=np.float32)
 HIGHLIGHT_RGB = np.array([156, 114, 86], dtype=np.float32)
+THERMAL_STOPS_RGB = [
+    (35, 60, 200),
+    (40, 170, 235),
+    (60, 200, 90),
+    (245, 215, 50),
+    (215, 40, 40),
+]
+THERMAL_ALPHA = 200
+THERMAL_VALUE_MIN = 50.0
+THERMAL_VALUE_MAX = 520.0
+THERMAL_UNITS = "J m\u207b\u00b2 K\u207b\u00b9 s\u207b\u00bd"
 
 
 def _png_chunk(kind: bytes, data: bytes) -> bytes:
@@ -61,6 +72,33 @@ def render_hazard(slope: np.ndarray, max_slope_deg: float) -> np.ndarray:
     return rgba
 
 
+def render_thermal(thermal: np.ndarray) -> tuple[np.ndarray, float, float]:
+    """Blue-green-red ramp over the local 2nd-98th percentile range. Returns the image and that range."""
+    values = np.asarray(thermal, dtype=np.float32)
+    valid = ~np.isnan(values)
+    low, high = (float(v) for v in np.percentile(values[valid], [2, 98]))
+    stretched = np.clip((np.nan_to_num(values, nan=low) - low) / max(high - low, 1e-6), 0.0, 1.0)
+    stops = np.array(THERMAL_STOPS_RGB, dtype=np.float32)
+    positions = np.linspace(0.0, 1.0, len(stops))
+    rgba = np.zeros((*values.shape, 4), dtype=np.uint8)
+    for channel in range(3):
+        rgba[..., channel] = np.interp(stretched, positions, stops[:, channel]).astype(np.uint8)
+    rgba[..., 3] = np.where(valid, THERMAL_ALPHA, 0)
+    return rgba, low, high
+
+
+def render_thermal_values(thermal: np.ndarray) -> np.ndarray:
+    """Grey image holding the actual values on a fixed scale, read by the frontend for the cursor readout."""
+    values = np.asarray(thermal, dtype=np.float32)
+    valid = ~np.isnan(values)
+    span = THERMAL_VALUE_MAX - THERMAL_VALUE_MIN
+    level = np.clip((np.nan_to_num(values, nan=THERMAL_VALUE_MIN) - THERMAL_VALUE_MIN) / span, 0.0, 1.0)
+    rgba = np.zeros((*values.shape, 4), dtype=np.uint8)
+    rgba[..., :3] = np.round(level * 255.0).astype(np.uint8)[..., None]
+    rgba[..., 3] = np.where(valid, 255, 0)
+    return rgba
+
+
 def main() -> None:
     dem_file = PROCESSED_DIR / "dem.npy"
     slope_file = PROCESSED_DIR / "slope.npy"
@@ -83,6 +121,25 @@ def main() -> None:
 
     rows, cols = dem.shape
     print(f"Wrote hillshade.png and {len(SLOPE_LIMITS_DEG)} hazard overlays ({cols}x{rows} px) to {OUTPUT_DIR}")
+
+    thermal_file = PROCESSED_DIR / "thermal.npy"
+    if thermal_file.exists():
+        thermal = np.load(thermal_file)
+        image, low, high = render_thermal(thermal)
+        (OUTPUT_DIR / "thermal.png").write_bytes(encode_png(image))
+        (OUTPUT_DIR / "thermal-values.png").write_bytes(encode_png(render_thermal_values(thermal)))
+        legend = {
+            "min": round(low, 1),
+            "max": round(high, 1),
+            "units": THERMAL_UNITS,
+            "stops": THERMAL_STOPS_RGB,
+            "value_min": THERMAL_VALUE_MIN,
+            "value_max": THERMAL_VALUE_MAX,
+        }
+        (OUTPUT_DIR / "thermal.json").write_text(json.dumps(legend, ensure_ascii=False, indent=2))
+        print(f"Wrote thermal.png, thermal-values.png and thermal.json (thermal inertia {low:.0f} to {high:.0f})")
+    else:
+        print("No thermal.npy found, skipped the thermal layer (run build_thermal.py first).")
 
 
 if __name__ == "__main__":

@@ -20,6 +20,7 @@ import { GridCRS, cellToLatLng } from "../lib/gridCrs.ts";
 
 export interface LayerVisibility {
   imagery: boolean;
+  thermal: boolean;
   hazard: boolean;
   route: boolean;
   waypoints: boolean;
@@ -33,6 +34,7 @@ interface TerrainMapProps {
   walkbackM: number;
   habitatId?: string;
   terrainImageUrl?: string;
+  thermalImageUrl?: string;
   hazardImageUrl?: string;
   start?: GridCell | null;
   end?: GridCell | null;
@@ -115,6 +117,7 @@ export function TerrainMap({
   walkbackM,
   habitatId = "hab_alpha",
   terrainImageUrl,
+  thermalImageUrl,
   hazardImageUrl,
   start,
   end,
@@ -175,6 +178,10 @@ export function TerrainMap({
               pathOptions={{ stroke: false, fillColor: "var(--terrain-base)", fillOpacity: 0.9 }}
             />
           ))}
+      </Pane>
+
+      <Pane name="thermal" style={{ zIndex: 225 }}>
+        {layers.thermal && thermalImageUrl && <ImageOverlay url={thermalImageUrl} bounds={bounds} />}
       </Pane>
 
       <Pane name="hazard" style={{ zIndex: 250 }}>

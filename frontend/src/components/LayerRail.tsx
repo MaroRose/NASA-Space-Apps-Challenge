@@ -2,6 +2,7 @@ import type { LayerVisibility } from "./TerrainMap.tsx";
 
 const LAYER_LABELS: Record<keyof LayerVisibility, { name: string; source: string }> = {
   imagery: { name: "Imagery", source: "/terrain/hillshade.png (pre-rendered)" },
+  thermal: { name: "Thermal inertia", source: "THEMIS · /terrain/thermal.png" },
   hazard: { name: "Slope hazard", source: "/terrain/hazard-N.png (pre-rendered)" },
   route: { name: "Planned route", source: "/api/v1/route/plan" },
   waypoints: { name: "Waypoints", source: "/api/v1/site/overview" },

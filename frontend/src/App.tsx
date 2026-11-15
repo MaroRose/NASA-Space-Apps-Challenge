@@ -9,10 +9,13 @@ import { useRoutePlan } from "./hooks/useRoutePlan.ts";
 import { useTerrainInspector } from "./hooks/useTerrainInspector.ts";
 import type { GridCell } from "./types/terrain.ts";
 import { TelemetryPanel } from "./components/TelemetryPanel.tsx";
+import { ThermalLegend } from "./components/ThermalLegend.tsx";
+import { THERMAL_IMAGE_URL, useThermalLayer } from "./hooks/useThermalLayer.ts";
 
 
 const DEFAULT_LAYERS: LayerVisibility = {
   imagery: true,
+  thermal: false,
   hazard: true,
   route: true,
   waypoints: true,
@@ -30,6 +33,8 @@ function App() {
   const { site, error: siteError } = useSiteOverview();
   const { route, loading: routeLoading, error: routeError, plan } = useRoutePlan();
   const { inspected, onHover, clear: clearInspected } = useTerrainInspector(HOVER_THROTTLE_MS);
+  const { legend: thermalLegend, valueAt: thermalValueAt } = useThermalLayer();
+  const inspectedThermal = inspected ? thermalValueAt(inspected.x, inspected.y) : null;
 
   const [layers, setLayers] = useState<LayerVisibility>(DEFAULT_LAYERS);
   const [maxSlopeDeg, setMaxSlopeDeg] = useState(20);
@@ -138,6 +143,7 @@ function App() {
               walkbackM={WALKBACK_M}
               habitatId={HABITAT_ID}
               terrainImageUrl="/terrain/hillshade.png"
+              thermalImageUrl={THERMAL_IMAGE_URL}
               hazardImageUrl={`/terrain/hazard-${hazardLimit}.png`}
               start={start}
               end={end}
@@ -145,6 +151,8 @@ function App() {
               onPointLeave={clearInspected}
               onPointPick={handlePick}
             />
+
+            {layers.thermal && <ThermalLegend legend={thermalLegend} cursorValue={inspectedThermal} />}
 
             {inspected && (
               <div
@@ -185,6 +193,7 @@ function App() {
                   slope {inspected.slope_deg.toFixed(1)}°{" "}
                   {inspected.is_hazard ? "HAZARD" : ""}
                 </span>
+                {inspectedThermal !== null && <span>thermal inertia {inspectedThermal.toFixed(0)}</span>}
               </div>
             )}
           </div>
