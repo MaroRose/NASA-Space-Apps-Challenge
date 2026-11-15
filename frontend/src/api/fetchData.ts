@@ -7,20 +7,18 @@ import type {
 } from "../types/terrain.ts";
 
 const paths = {
-  apiBase: "/api/v1",
   health: "/health",
   siteOverview: "/site/overview",
   terrainPoint: "/terrain/point",
   routePlan: "/route/plan",
 } as const;
 
-type EndpointPath = (typeof paths)[Exclude<keyof typeof paths, "apiBase">];
+type EndpointPath = "/health" | "/site/overview" | "/terrain/point" | "/route/plan";
 
 type QueryParams = Record<string, string | number>;
 
 const API_BASE =
-  (import.meta.env.VITE_API_BASE as string | undefined) ??
-  `http://127.0.0.1:8000${paths.apiBase}`;
+  import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000/api/v1";
 
 function buildUrl(path: EndpointPath, params?: QueryParams): string {
   if (!params) return `${API_BASE}${path}`;

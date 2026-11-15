@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./styles/tokens.css";
-import { fetchRoutePlan, fetchSiteOverview, fetchTerrainPoint } from "./api/fetchRoutePlan.ts";
+import { fetchRoutePlan, fetchSiteOverview, fetchTerrainPoint } from "./api/fetchData.ts";
 import type { RoutePlanResponse, SiteOverview, TerrainPointInfo } from "./types/terrain.ts";
 import { TerrainMap, type LayerVisibility } from "./components/TerrainMap.tsx";
 import { LayerRail } from "./components/LayerRail.tsx";
@@ -74,7 +74,7 @@ function App() {
   if (siteError) {
     return (
       <main style={{ padding: 24, color: "var(--danger)" }}>
-        Could not reach the backend: {siteError}. Is it running on{" "}
+        Could not reach the backend: {siteError}. Is backend running on{" "}
         <code>http://127.0.0.1:8000</code>?
       </main>
     );
