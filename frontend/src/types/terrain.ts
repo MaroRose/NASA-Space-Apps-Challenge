@@ -4,6 +4,11 @@ export interface Waypoint {
   y: number;
 }
 
+export interface GridCell {
+  x: number;
+  y: number;
+}
+
 export interface HourlyTelemetry {
   sol_hour: number;
   ambient_temp_c: number;
