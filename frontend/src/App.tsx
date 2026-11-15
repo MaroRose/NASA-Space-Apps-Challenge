@@ -15,7 +15,7 @@ import { THERMAL_IMAGE_URL, useThermalLayer } from "./hooks/useThermalLayer.ts";
 
 const DEFAULT_LAYERS: LayerVisibility = {
   imagery: true,
-  optical: true,
+  optical: false,
   thermal: false,
   hazard: true,
   route: true,
