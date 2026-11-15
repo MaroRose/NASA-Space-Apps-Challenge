@@ -14,6 +14,7 @@ import { THERMAL_IMAGE_URL, useThermalLayer } from "./hooks/useThermalLayer.ts";
 import { PositionPanel } from "./components/PositionPanel.tsx";
 import { useGeoref } from "./hooks/useGeoref.ts";
 import { cellToLatLon, formatLatLon } from "./lib/marsCoords.ts";
+import { useRoverPath } from "./hooks/useRoverPath.ts";
 
 
 const DEFAULT_LAYERS: LayerVisibility = {
@@ -24,6 +25,7 @@ const DEFAULT_LAYERS: LayerVisibility = {
   route: true,
   waypoints: true,
   walkbackRing: true,
+  roverPath: true,
 };
 
 const WALKBACK_M = 1500;
@@ -40,6 +42,7 @@ function App() {
   const { legend: thermalLegend, valueAt: thermalValueAt } = useThermalLayer();
   const inspectedThermal = inspected ? thermalValueAt(inspected.x, inspected.y) : null;
   const georef = useGeoref();
+  const roverPath = useRoverPath();
 
   const [layers, setLayers] = useState<LayerVisibility>(DEFAULT_LAYERS);
   const [maxSlopeDeg, setMaxSlopeDeg] = useState(20);
@@ -172,6 +175,8 @@ function App() {
               start={start}
               end={end}
               position={position}
+              georef={georef}
+              roverPath={roverPath}
               onPointHover={onHover}
               onPointLeave={clearInspected}
               onPointPick={handlePick}
