@@ -20,6 +20,7 @@ import { GridCRS, cellToLatLng } from "../lib/gridCrs.ts";
 
 export interface LayerVisibility {
   imagery: boolean;
+  optical: boolean;
   hazard: boolean;
   route: boolean;
   waypoints: boolean;
@@ -33,6 +34,7 @@ interface TerrainMapProps {
   walkbackM: number;
   habitatId?: string;
   terrainImageUrl?: string;
+  opticalImageUrl?: string;
   hazardImageUrl?: string;
   start?: GridCell | null;
   end?: GridCell | null;
@@ -115,6 +117,7 @@ export function TerrainMap({
   walkbackM,
   habitatId = "hab_alpha",
   terrainImageUrl,
+  opticalImageUrl,
   hazardImageUrl,
   start,
   end,
@@ -134,6 +137,8 @@ export function TerrainMap({
   const habitat = site.waypoints.find((w) => w.id === habitatId) ?? site.waypoints[0];
   const pois = site.waypoints.filter((w) => w !== habitat);
   const walkbackCells = site.resolution_m > 0 ? walkbackM / site.resolution_m : 0;
+  // Safe zone follows the chosen start point; falls back to the habitat.
+  const safeCenter = start ?? habitat;
 
   const path = route?.path_coordinates.map((p) => cellToLatLng(p.x, p.y)) ?? [];
   const routeStart = route?.path_coordinates[0] ?? start;
@@ -177,15 +182,19 @@ export function TerrainMap({
           ))}
       </Pane>
 
+      <Pane name="optical" style={{ zIndex: 220 }}>
+        {layers.optical && opticalImageUrl && <ImageOverlay url={opticalImageUrl} bounds={bounds} />}
+      </Pane>
+
       <Pane name="hazard" style={{ zIndex: 250 }}>
         {layers.hazard && hazardImageUrl && (
           <ImageOverlay url={hazardImageUrl} bounds={bounds} className="hazard-raster" />
         )}
       </Pane>
 
-      {layers.walkbackRing && habitat && walkbackCells > 0 && (
+      {layers.walkbackRing && safeCenter && walkbackCells > 0 && (
         <Circle
-          center={cellToLatLng(habitat.x, habitat.y)}
+          center={cellToLatLng(safeCenter.x, safeCenter.y)}
           radius={walkbackCells}
           interactive={false}
           pathOptions={{

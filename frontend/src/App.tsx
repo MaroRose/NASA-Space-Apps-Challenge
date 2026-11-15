@@ -13,6 +13,7 @@ import { TelemetryPanel } from "./components/TelemetryPanel.tsx";
 
 const DEFAULT_LAYERS: LayerVisibility = {
   imagery: true,
+  optical: true,
   hazard: true,
   route: true,
   waypoints: true,
@@ -138,6 +139,7 @@ function App() {
               walkbackM={WALKBACK_M}
               habitatId={HABITAT_ID}
               terrainImageUrl="/terrain/hillshade.png"
+              opticalImageUrl={site.layers?.find((l) => l.id === "optical")?.url}
               hazardImageUrl={`/terrain/hazard-${hazardLimit}.png`}
               start={start}
               end={end}
