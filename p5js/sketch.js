@@ -1,7 +1,7 @@
 import { JSONHandler } from "./json-handler.js";
 import { parseMissionCsv, PathFinder } from "./path-finder.js";
 
-const mapPath = "../data/Lunar_Elevation_Map.jpg";
+const mapPath = "../data/Martian_Elevation_Map.jpg";
 const missionPath = "../data/MissionInputData.csv";
 const metadataPath = "../data/gale_dem_info.json";
 
