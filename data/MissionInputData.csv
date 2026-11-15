@@ -1,2 +1,2 @@
-xStartPosition,yStartPosition,xEndPosition,yEndPosition, width, height
-100,100,500,500, 1024, 512
+xStartPosition,yStartPosition,xEndPosition,yEndPosition,width,height,payloadWeight
+100,100,500,500, 1024, 512, 50
