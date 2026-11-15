@@ -4,10 +4,22 @@ export interface Waypoint {
   y: number;
 }
 
+export interface GridCell {
+  x: number;
+  y: number;
+}
+
 export interface HourlyTelemetry {
   sol_hour: number;
   ambient_temp_c: number;
   radiation_mgy_hr: number;
+}
+
+export interface LayerInfo {
+  id: string;
+  name: string;
+  url: string;
+  attribution?: string;
 }
 
 export interface SiteOverview {
@@ -19,6 +31,8 @@ export interface SiteOverview {
   elevation_stats_m: { min: number; max: number };
   waypoints: Waypoint[];
   hourly_telemetry: HourlyTelemetry[];
+  window_bounds_deg?: { west: number; south: number; east: number; north: number };
+  layers?: LayerInfo[];
 }
 
 export interface TerrainPointInfo {

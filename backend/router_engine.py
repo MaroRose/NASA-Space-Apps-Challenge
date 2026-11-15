@@ -92,7 +92,7 @@ def calculate_path(
     came_from: dict[tuple[int, int], tuple[int, int]] = {}
     g_score: dict[tuple[int, int], float] = {(start_x, start_y): 0.0}
 
-    MAX_ITERATIONS = 40000
+    MAX_ITERATIONS = 400000
     iterations = 0
     inv_max_slope = 2.0 / max_slope_deg
     elev_weight = 0.5 / stride

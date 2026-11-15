@@ -1,0 +1,48 @@
+.terrain-map.leaflet-container {
+  background: var(--bg);
+  font-family: var(--font-body);
+  cursor: crosshair;
+}
+
+.terrain-map .hazard-raster {
+  image-rendering: pixelated;
+}
+
+.wp-marker {
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  background: var(--surface);
+  border: 2px solid var(--text-soft);
+  transform: rotate(45deg);
+  cursor: pointer;
+}
+
+.wp-marker--hab {
+  background: var(--info);
+  border-color: var(--bg);
+  border-radius: 3px;
+  transform: none;
+}
+
+.terrain-map .wp-label {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 12px;
+  text-shadow: 0 0 4px var(--bg), 0 0 4px var(--bg);
+}
+
+.terrain-map .wp-label::before {
+  display: none;
+}
+
+.terrain-map .leaflet-bar a {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
