@@ -40,6 +40,7 @@ interface TerrainMapProps {
   hazardImageUrl?: string;
   start?: GridCell | null;
   end?: GridCell | null;
+  position?: GridCell | null;
   onPointHover?: (gridX: number, gridY: number) => void;
   onPointLeave?: () => void;
   onPointPick?: (gridX: number, gridY: number) => void;
@@ -55,6 +56,12 @@ const poiIcon = L.divIcon({
   className: "",
   iconSize: [0, 0],
   html: '<span class="wp-marker"></span>',
+});
+
+const positionIcon = L.divIcon({
+  className: "",
+  iconSize: [0, 0],
+  html: '<span class="position-marker"></span>',
 });
 
 const ENDPOINT_STYLE = { color: "var(--bg)", weight: 2, fillColor: "var(--accent)", fillOpacity: 1 };
@@ -124,6 +131,7 @@ export function TerrainMap({
   hazardImageUrl,
   start,
   end,
+  position,
   onPointHover,
   onPointLeave,
   onPointPick,
@@ -241,18 +249,27 @@ export function TerrainMap({
         </Marker>
       )}
       {layers.waypoints &&
-        pois.map((wp) => (
-          <Marker
-            key={wp.id}
-            position={cellToLatLng(wp.x, wp.y)}
-            icon={poiIcon}
-            eventHandlers={{ click: () => onPointPick?.(wp.x, wp.y) }}
-          >
-            <Tooltip permanent direction="right" offset={[10, 0]} className="wp-label">
-              {wp.id}
-            </Tooltip>
-          </Marker>
-        ))}
+        pois.map((wp, index) => {
+          // Alternate label sides so neighbouring waypoints don't overprint each other.
+          const direction = index % 2 === 0 ? "right" : "left";
+          return (
+            <Marker
+              key={wp.id}
+              position={cellToLatLng(wp.x, wp.y)}
+              icon={poiIcon}
+              eventHandlers={{ click: () => onPointPick?.(wp.x, wp.y) }}
+            >
+              <Tooltip
+                permanent
+                direction={direction}
+                offset={[direction === "right" ? 10 : -10, 0]}
+                className="wp-label"
+              >
+                {wp.id}
+              </Tooltip>
+            </Marker>
+          );
+        })}
 
       {layers.route && routeStart && (
         <CircleMarker
@@ -269,6 +286,14 @@ export function TerrainMap({
           interactive={false}
           pathOptions={ENDPOINT_STYLE}
         />
+      )}
+
+      {position && (
+        <Marker position={cellToLatLng(position.x, position.y)} icon={positionIcon} interactive={false}>
+          <Tooltip permanent direction="right" offset={[12, 0]} className="wp-label">
+            you
+          </Tooltip>
+        </Marker>
       )}
     </MapContainer>
   );

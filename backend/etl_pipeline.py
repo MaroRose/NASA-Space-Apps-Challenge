@@ -12,8 +12,8 @@ OPTICAL_PX = 1600  # 2.5 m/px cut of the HiRISE ortho (4x sharper than the 10 m 
 TARGET_RESOLUTION_M = 10.0
 WAYPOINTS_M = [
     ("hab_alpha", 200, 200),
-    ("wp_ridge", 1500, 1800),
-    ("wp_boxwork", 3200, 3200),
+    ("bradbury_landing", 2920, 2140),
+    ("yellowknife_bay", 3180, 2190),
 ]
 
 def _parse_rems_hourly(rems_path: Path) -> list[dict]:

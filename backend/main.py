@@ -38,8 +38,8 @@ def _generate_teammate_fallback_grid(size: int = 1000):
         "elevation_stats_m": {"min": round(float(np.min(dem)), 2), "max": round(float(np.max(dem)), 2)},
         "waypoints": [
             {"id": "hab_alpha", "x": 100, "y": 100},
-            {"id": "wp_ridge", "x": 500, "y": 500},
-            {"id": "wp_boxwork", "x": 800, "y": 800},
+            {"id": "bradbury_landing", "x": 730, "y": 535},
+            {"id": "yellowknife_bay", "x": 795, "y": 548},
         ],
         "hourly_telemetry": [
             {"sol_hour": hr, "ambient_temp_c": round(-65.0 + 40.0 * math.sin(hr / 24.0 * math.pi), 1), "radiation_mgy_hr": 0.011}
