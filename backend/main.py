@@ -226,3 +226,17 @@ async def calculate_route_get(
         start_x=start_x, start_y=start_y, end_x=end_x, end_y=end_y, max_slope_deg=max_slope_deg
     )
     return _execute_routing(req)
+
+
+# ---------------------------------------------------------------------------
+# Serve the built frontend (frontend/dist copied to backend/static at deploy).
+# This mount MUST stay at the bottom of the file, after every API route,
+# or it will swallow the /api/v1/* paths.
+# ---------------------------------------------------------------------------
+from fastapi.staticfiles import StaticFiles
+
+_static_dir = Path(__file__).resolve().parent / "static"
+if _static_dir.is_dir():
+    app.mount("/", StaticFiles(directory=_static_dir, html=True), name="frontend")
+else:
+    print(f"[BOOT] No frontend build found at {_static_dir} - API-only mode.")

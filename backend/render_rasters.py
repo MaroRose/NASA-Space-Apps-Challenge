@@ -72,6 +72,14 @@ def render_hazard(slope: np.ndarray, max_slope_deg: float) -> np.ndarray:
     return rgba
 
 
+def render_optical(gray: np.ndarray) -> np.ndarray:
+    """Percentile-stretched grayscale HiRISE photo as RGB."""
+    g = gray.astype(np.float32)
+    low, high = np.percentile(g, [2, 98])
+    t = np.clip((g - low) / max(high - low, 1e-6), 0.0, 1.0)
+    return (t * 255.0).astype(np.uint8)[..., None].repeat(3, axis=2)
+
+
 def render_thermal(thermal: np.ndarray) -> tuple[np.ndarray, float, float]:
     """Blue-green-red ramp over the local 2nd-98th percentile range. Returns the image and that range."""
     values = np.asarray(thermal, dtype=np.float32)
@@ -118,6 +126,11 @@ def main() -> None:
     (OUTPUT_DIR / "hillshade.png").write_bytes(encode_png(render_hillshade(dem, resolution_m)))
     for limit in SLOPE_LIMITS_DEG:
         (OUTPUT_DIR / f"hazard-{limit}.png").write_bytes(encode_png(render_hazard(slope, float(limit))))
+
+    optical_file = PROCESSED_DIR / "optical.npy"
+    if optical_file.exists():
+        (OUTPUT_DIR / "optical.png").write_bytes(encode_png(render_optical(np.load(optical_file))))
+        print("Wrote optical.png (HiRISE ortho window)")
 
     rows, cols = dem.shape
     print(f"Wrote hillshade.png and {len(SLOPE_LIMITS_DEG)} hazard overlays ({cols}x{rows} px) to {OUTPUT_DIR}")

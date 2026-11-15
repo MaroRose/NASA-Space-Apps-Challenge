@@ -1,0 +1,73 @@
+# Build the Vite frontend, bundle it into the FastAPI backend, and deploy
+# the backend folder to Azure Web App (Python runtime).
+# Azure app settings required (set in Portal -> Configuration):
+#   WEBSITES_PORT = 8000
+#   SCM_DO_BUILD_DURING_DEPLOYMENT = true
+# Startup command: python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
+name: Build and deploy MarsWalk (FastAPI + Vite) to Azure Web App - NASA-Space-Apps
+
+on:
+  push:
+    branches:
+      - 'main'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
+        with:
+          node-version: '26.x'
+
+      - name: Install and build frontend
+        run: |
+          npm install
+          npm run build
+        working-directory: ./frontend
+
+      - name: Copy frontend build into backend/static
+        run: |
+          rm -rf backend/static
+          cp -r frontend/dist backend/static
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-app
+          path: backend
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: python-app
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: "dc636269-de50-47e3-b352-b7a79a93ce4b"
+          tenant-id: "e202cd47-7a56-4baa-99e3-e3b71a7c77dd"
+          subscription-id: "87e9371f-3971-4462-9301-01969c24fb9d"
+
+      - name: 'Deploy to Azure Web App'
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'NASA-Space-Apps'
+          slot-name: 'Production'
+          package: .

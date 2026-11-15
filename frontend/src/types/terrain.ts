@@ -15,6 +15,13 @@ export interface HourlyTelemetry {
   radiation_mgy_hr: number;
 }
 
+export interface LayerInfo {
+  id: string;
+  name: string;
+  url: string;
+  attribution?: string;
+}
+
 export interface SiteOverview {
   site_name: string;
   storage_status?: string;
@@ -24,6 +31,8 @@ export interface SiteOverview {
   elevation_stats_m: { min: number; max: number };
   waypoints: Waypoint[];
   hourly_telemetry: HourlyTelemetry[];
+  window_bounds_deg?: { west: number; south: number; east: number; north: number };
+  layers?: LayerInfo[];
 }
 
 export interface TerrainPointInfo {

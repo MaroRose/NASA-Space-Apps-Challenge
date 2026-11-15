@@ -15,6 +15,7 @@ import { THERMAL_IMAGE_URL, useThermalLayer } from "./hooks/useThermalLayer.ts";
 
 const DEFAULT_LAYERS: LayerVisibility = {
   imagery: true,
+  optical: true,
   thermal: false,
   hazard: true,
   route: true,
@@ -143,6 +144,7 @@ function App() {
               walkbackM={WALKBACK_M}
               habitatId={HABITAT_ID}
               terrainImageUrl="/terrain/hillshade.png"
+              opticalImageUrl={site.layers?.find((l) => l.id === "optical")?.url}
               thermalImageUrl={THERMAL_IMAGE_URL}
               hazardImageUrl={`/terrain/hazard-${hazardLimit}.png`}
               start={start}
