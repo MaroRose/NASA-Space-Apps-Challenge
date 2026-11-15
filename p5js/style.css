@@ -16,6 +16,7 @@ h1 {
 }
 
 #status,
+#mission-input,
 #metrics {
   min-height: 1.5em;
 }

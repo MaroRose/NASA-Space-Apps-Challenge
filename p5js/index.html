@@ -3,21 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Interplanetary Survival Guide</title>
+    <title>Mars Walk Planner I/O page</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <main>
-      <h1>Interplanetary Survival Guide</h1>
+      <h1>Mars Walk Planner I/O page</h1>
       <p id="status" role="status">Loading map and mission data…</p>
-      
+
       <div id="controls">
+        <button id="upload-data" type="button" disabled>
+          Upload mission data
+        </button>
+
         <button id="download-mission" type="button" disabled>
           Download mission results
         </button>
+
         <button id="download-path" type="button" disabled>
           Download path coordinates
         </button>
+        <p id="mission-input"></p>
         <p id="metrics"></p>
       </div>
       <div id="sketch-container"></div>
