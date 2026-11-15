@@ -1,0 +1,156 @@
+{
+  "site_name": "Gale Crater - Mount Sharp EVA Sector",
+  "storage_status": "local_mmap_cache",
+  "grid_shape": [
+    400,
+    400
+  ],
+  "resolution_m": 10.0,
+  "extent_m": {
+    "width": 3999.68,
+    "height": 3999.68
+  },
+  "elevation_stats_m": {
+    "min": -4530.96,
+    "max": -4475.31
+  },
+  "waypoints": [
+    {
+      "id": "hab_alpha",
+      "x": 20,
+      "y": 20
+    },
+    {
+      "id": "wp_ridge",
+      "x": 150,
+      "y": 180
+    },
+    {
+      "id": "wp_boxwork",
+      "x": 320,
+      "y": 320
+    }
+  ],
+  "hourly_telemetry": [
+    {
+      "sol_hour": 0,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 1,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 2,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 3,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 4,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 5,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 6,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 7,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 8,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 9,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 10,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 11,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 12,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 13,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 14,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 15,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 16,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 17,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 18,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 19,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 20,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 21,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 22,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 23,
+      "ambient_temp_c": -65.0,
+      "radiation_mgy_hr": 0.011
+    }
+  ]
+}

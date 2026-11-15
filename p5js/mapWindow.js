@@ -99,9 +99,9 @@ new window.p5((p) => {
 
       metricsElement.textContent =
         `Path length: ${pathFinder.calculateTotalPathLength().toFixed(2)} | ` +
-        `Time: ${pathFinder.calculateTotalTime()} | ` +
-        `Fuel cost: ${pathFinder.calculateFuelCost()} | ` +
-        `Payload: ${pathFinder.payloadWeight}`;
+        `Time: ${pathFinder.calculateTotalTime().toFixed(2)} | ` +
+        `Fuel cost: ${pathFinder.calculateFuelCost().toFixed(2)} | ` +
+        `Payload: ${pathFinder.calculatePayloadWeight()}`;
 
       const metadataFile = metadataHandler.getJSON().metadata?.file;
       setStatus(metadataFile ? `Map ready. Metadata source: ${metadataFile}` : "Map ready.");

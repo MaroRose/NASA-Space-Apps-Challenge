@@ -1,3 +1,5 @@
+import { MissionMetrics } from "./missionMetrics.js";
+
 export function parseMissionCsv(text) {
   const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
   if (lines.length < 2) {
@@ -110,17 +112,36 @@ export class PathFinder {
       x: this.readCoordinate("xEndPosition"),
       y: this.readCoordinate("yEndPosition"),
     };
-    this.payloadWeight = this.readNumber("payloadWeight");
-    this.initialFuel = this.mission.initialFuel === undefined || this.mission.initialFuel === ""
-      ? 0
-      : this.readNumber("initialFuel");
-    this.remainingFuel = this.initialFuel;
+
+
+    this.missionInputData = {
+      payloadWeight: this.readNumber("payloadWeight"),
+      initialFuel: this.mission.initialFuel === undefined || this.mission.initialFuel === ""
+        ? 0
+        : this.readNumber("initialFuel"),
+      remainingFuel: this.mission.initialFuel === undefined || this.mission.initialFuel === ""
+        ? 0
+        : this.readNumber("initialFuel"),
+      velocity: this.readNumber("velocity"),
+      fuelEfficiency: this.readNumber("fuelEfficiency"),
+      totalPathLength: 0,
+      totalTime: 0,
+      fuelCost: 0,
+      fuelConsumptionRate: 0 
+    }
+
+    console.log(this.missionInputData);
+    
+    this.missionMetrics = new MissionMetrics(this);
   }
 
   readNumber(field) {
     const value = Number(this.mission[field]);
     if (!Number.isFinite(value)) {
       throw new Error(`Mission input is missing a valid "${field}" value.`);
+    }
+    if ((field === "velocity" || field === "fuelEfficiency") && value <= 0) {
+      throw new RangeError(`Mission input "${field}" must be greater than zero.`);
     }
     return value;
   }
@@ -237,19 +258,23 @@ export class PathFinder {
   }
 
   calculateTotalPathLength() {
-    let totalLength = 0;
-    for (let i = 0; i < this.path.length - 1; i += 1) {
-      totalLength += this.distance(this.path[i], this.path[i + 1]);
-    }
-    return totalLength;
+    // let totalLength = 0;
+    // for (let i = 0; i < this.path.length - 1; i += 1) {
+    //   totalLength += this.distance(this.path[i], this.path[i + 1]);
+    // }
+    return this.missionMetrics.calculateTotalPathLength();
   }
 
   calculateTotalTime() {
-    return 0;
+    return this.missionMetrics.calculateTotalTime();
   }
 
   calculateFuelCost() {
-    return this.remainingFuel - this.initialFuel;
+    return this.missionMetrics.calculateFuelCost();
+  }
+
+  calculatePayloadWeight() {
+    return this.missionMetrics.calculatePayloadWeight();
   }
 
   missionOutputCsv() {
