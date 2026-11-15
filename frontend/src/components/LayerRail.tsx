@@ -8,6 +8,7 @@ const LAYER_LABELS: Record<keyof LayerVisibility, { name: string; source: string
   route: { name: "Planned route", source: "/api/v1/route/plan" },
   waypoints: { name: "Waypoints", source: "/api/v1/site/overview" },
   walkbackRing: { name: "Walk-back ring", source: "computed client-side" },
+  roverPath: { name: "Curiosity traverse", source: "MSL localization · /terrain/rover-path.json" },
 };
 
 interface LayerRailProps {

@@ -40,6 +40,18 @@ export function latLonToCell(
   };
 }
 
+export function latLonToGridPoint(
+  georef: GridGeoref,
+  latLon: MarsLatLon,
+  resolutionM: number,
+): { x: number; y: number } {
+  const k = metersPerDegree(georef);
+  return {
+    x: (latLon.lon * k - georef.left_m) / resolutionM - 0.5,
+    y: (georef.top_m - latLon.lat * k) / resolutionM - 0.5,
+  };
+}
+
 export function isInsideGrid(cell: GridCell, cols: number, rows: number) {
   return cell.x >= 0 && cell.y >= 0 && cell.x < cols && cell.y < rows;
 }
