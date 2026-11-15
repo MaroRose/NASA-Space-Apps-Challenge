@@ -1,5 +1,6 @@
 import type { GridCell, RoutePlanResponse, SiteOverview } from "../types/terrain.ts";
 import type { ReactNode } from "react";
+import { type GridGeoref, cellToLatLon, formatLatLon } from "../lib/marsCoords.ts";
 
 export type PlacingTarget = "start" | "end";
 
@@ -17,6 +18,7 @@ interface RoutePanelProps {
   onPlacingChange: (target: PlacingTarget) => void;
   onMaxSlopeChange: (value: number) => void;
   onRecompute: () => void;
+  georef?: GridGeoref | null;
   children?: ReactNode;
 }
 
@@ -66,8 +68,11 @@ export function RoutePanel({
   onPlacingChange,
   onMaxSlopeChange,
   onRecompute,
+  georef,
   children,
 }: RoutePanelProps) {
+  const latLonOf = (cell: GridCell | null) =>
+    georef && cell ? formatLatLon(cellToLatLon(georef, cell.x, cell.y, site.resolution_m)) : null;
   const exceedsLimit = route && route.max_slope_encountered_deg > maxSlopeDeg;
   const nearLimit = route && !exceedsLimit && route.max_slope_encountered_deg > maxSlopeDeg - 5;
   const status = exceedsLimit ? "NO-GO" : nearLimit ? "CAUTION" : "GO";
@@ -161,6 +166,11 @@ export function RoutePanel({
                 >
                   {formatCell(target === "start" ? start : end)}
                 </span>
+                {latLonOf(target === "start" ? start : end) && (
+                  <span className="mono" style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                    {latLonOf(target === "start" ? start : end)}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -247,8 +257,14 @@ export function RoutePanel({
             }}
           >
             <span>{wp.id}</span>
-            <span className="mono">
+            <span className="mono" style={{ textAlign: "right" }}>
               ({wp.x}, {wp.y})
+              {latLonOf(wp) && (
+                <>
+                  <br />
+                  <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{latLonOf(wp)}</span>
+                </>
+              )}
             </span>
           </div>
         ))}

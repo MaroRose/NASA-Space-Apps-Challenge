@@ -11,6 +11,9 @@ import type { GridCell } from "./types/terrain.ts";
 import { TelemetryPanel } from "./components/TelemetryPanel.tsx";
 import { ThermalLegend } from "./components/ThermalLegend.tsx";
 import { THERMAL_IMAGE_URL, useThermalLayer } from "./hooks/useThermalLayer.ts";
+import { PositionPanel } from "./components/PositionPanel.tsx";
+import { useGeoref } from "./hooks/useGeoref.ts";
+import { cellToLatLon, formatLatLon } from "./lib/marsCoords.ts";
 
 
 const DEFAULT_LAYERS: LayerVisibility = {
@@ -36,6 +39,7 @@ function App() {
   const { inspected, onHover, clear: clearInspected } = useTerrainInspector(HOVER_THROTTLE_MS);
   const { legend: thermalLegend, valueAt: thermalValueAt } = useThermalLayer();
   const inspectedThermal = inspected ? thermalValueAt(inspected.x, inspected.y) : null;
+  const georef = useGeoref();
 
   const [layers, setLayers] = useState<LayerVisibility>(DEFAULT_LAYERS);
   const [maxSlopeDeg, setMaxSlopeDeg] = useState(20);
@@ -45,6 +49,8 @@ function App() {
   const [pickedStart, setPickedStart] = useState<GridCell | null>(null);
   const [pickedEnd, setPickedEnd] = useState<GridCell | null>(null);
   const [placing, setPlacing] = useState<PlacingTarget>("end");
+  const [position, setPosition] = useState<GridCell | null>(null);
+  const [placingPosition, setPlacingPosition] = useState(false);
 
   const habitat = site?.waypoints.find((w) => w.id === HABITAT_ID) ?? site?.waypoints[0];
   const firstPoi = site?.waypoints.find((w) => w !== habitat);
@@ -64,9 +70,25 @@ function App() {
   }, [startX, startY, endX, endY, plan]);
 
   function handlePick(x: number, y: number) {
+    if (placingPosition) {
+      setPosition({ x, y });
+      setPlacingPosition(false);
+      return;
+    }
     if (placing === "start") setPickedStart({ x, y });
     else setPickedEnd({ x, y });
   }
+
+  function routeHome() {
+    if (!position || !habitat) return;
+    setPickedStart(position);
+    setPickedEnd({ x: habitat.x, y: habitat.y });
+  }
+
+  const inspectedLatLon =
+    georef && inspected && site
+      ? formatLatLon(cellToLatLon(georef, inspected.x, inspected.y, site.resolution_m))
+      : null;
 
   const hazardLimit = Math.min(
     MAX_SLOPE_LIMIT_DEG,
@@ -149,6 +171,7 @@ function App() {
               hazardImageUrl={`/terrain/hazard-${hazardLimit}.png`}
               start={start}
               end={end}
+              position={position}
               onPointHover={onHover}
               onPointLeave={clearInspected}
               onPointPick={handlePick}
@@ -184,6 +207,7 @@ function App() {
                 <span>
                   cell ({inspected.x}, {inspected.y})
                 </span>
+                {inspectedLatLon && <span>{inspectedLatLon}</span>}
                 <span>elev {inspected.elev_m.toFixed(1)} m</span>
                 <span
                   style={{
@@ -219,7 +243,19 @@ function App() {
           onRecompute={() => {
             if (start && end) plan({ start, end, maxSlopeDeg });
           }}
+          georef={georef}
         >
+          <PositionPanel
+            site={site}
+            georef={georef}
+            position={position}
+            habitat={habitat ?? null}
+            walkbackM={WALKBACK_M}
+            placingPosition={placingPosition}
+            onPlacingPositionChange={setPlacingPosition}
+            onPositionChange={setPosition}
+            onRouteHome={routeHome}
+          />
           <TelemetryPanel
             telemetry={site.hourly_telemetry}
             distanceM={route?.total_distance_m ?? null}
