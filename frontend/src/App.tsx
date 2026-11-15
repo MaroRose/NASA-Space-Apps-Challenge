@@ -8,6 +8,8 @@ import { useSiteOverview } from "./hooks/useSiteOverview.ts";
 import { useRoutePlan } from "./hooks/useRoutePlan.ts";
 import { useTerrainInspector } from "./hooks/useTerrainInspector.ts";
 import type { GridCell } from "./types/terrain.ts";
+import { TelemetryPanel } from "./components/TelemetryPanel.tsx";
+
 
 const DEFAULT_LAYERS: LayerVisibility = {
   imagery: true,
@@ -22,6 +24,7 @@ const HABITAT_ID = "hab_alpha";
 const MIN_SLOPE_LIMIT_DEG = 10;
 const MAX_SLOPE_LIMIT_DEG = 30;
 const HOVER_THROTTLE_MS = 150;
+const DEFAULT_DEPARTURE_HOUR = 9;
 
 function App() {
   const { site, error: siteError } = useSiteOverview();
@@ -30,6 +33,8 @@ function App() {
 
   const [layers, setLayers] = useState<LayerVisibility>(DEFAULT_LAYERS);
   const [maxSlopeDeg, setMaxSlopeDeg] = useState(20);
+  const [departureHour, setDepartureHour] = useState(DEFAULT_DEPARTURE_HOUR);
+
 
   const [pickedStart, setPickedStart] = useState<GridCell | null>(null);
   const [pickedEnd, setPickedEnd] = useState<GridCell | null>(null);
@@ -89,7 +94,14 @@ function App() {
         }}
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, letterSpacing: "0.04em" }}>
+          <span
+            style={{
+              fontFamily: "var(--font-display)",
+              fontWeight: 700,
+              fontSize: 16,
+              letterSpacing: "0.04em",
+            }}
+          >
             MARSWALK PLANNER
           </span>
           <span style={{ color: "var(--text-muted)", fontSize: 11 }}>
@@ -99,7 +111,14 @@ function App() {
         </div>
       </header>
 
-      <div style={{ display: "flex", flexWrap: "wrap", flex: "1 1 auto", minHeight: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          flex: "1 1 auto",
+          minHeight: 0,
+        }}
+      >
         <LayerRail layers={layers} onChange={setLayers} />
 
         <section
@@ -146,13 +165,25 @@ function App() {
                   pointerEvents: "none",
                 }}
               >
-                <span className="eyebrow" style={{ fontFamily: "var(--font-body)" }}>
+                <span
+                  className="eyebrow"
+                  style={{ fontFamily: "var(--font-body)" }}
+                >
                   POINT INSPECTOR
                 </span>
-                <span>cell ({inspected.x}, {inspected.y})</span>
+                <span>
+                  cell ({inspected.x}, {inspected.y})
+                </span>
                 <span>elev {inspected.elev_m.toFixed(1)} m</span>
-                <span style={{ color: inspected.is_hazard ? "var(--danger)" : "var(--text)" }}>
-                  slope {inspected.slope_deg.toFixed(1)}° {inspected.is_hazard ? "HAZARD" : ""}
+                <span
+                  style={{
+                    color: inspected.is_hazard
+                      ? "var(--danger)"
+                      : "var(--text)",
+                  }}
+                >
+                  slope {inspected.slope_deg.toFixed(1)}°{" "}
+                  {inspected.is_hazard ? "HAZARD" : ""}
                 </span>
               </div>
             )}
@@ -177,7 +208,14 @@ function App() {
           onRecompute={() => {
             if (start && end) plan({ start, end, maxSlopeDeg });
           }}
-        />
+        >
+          <TelemetryPanel
+            telemetry={site.hourly_telemetry}
+            distanceM={route?.total_distance_m ?? null}
+            departureHour={departureHour}
+            onDepartureHourChange={setDepartureHour}
+          />
+        </RoutePanel>
       </div>
     </div>
   );

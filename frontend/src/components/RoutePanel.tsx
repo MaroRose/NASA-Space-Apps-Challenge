@@ -1,4 +1,5 @@
 import type { GridCell, RoutePlanResponse, SiteOverview } from "../types/terrain.ts";
+import type { ReactNode } from "react";
 
 export type PlacingTarget = "start" | "end";
 
@@ -16,6 +17,7 @@ interface RoutePanelProps {
   onPlacingChange: (target: PlacingTarget) => void;
   onMaxSlopeChange: (value: number) => void;
   onRecompute: () => void;
+  children?: ReactNode;
 }
 
 const PLACING_OPTIONS: { target: PlacingTarget; label: string }[] = [
@@ -64,6 +66,7 @@ export function RoutePanel({
   onPlacingChange,
   onMaxSlopeChange,
   onRecompute,
+  children,
 }: RoutePanelProps) {
   const exceedsLimit = route && route.max_slope_encountered_deg > maxSlopeDeg;
   const nearLimit = route && !exceedsLimit && route.max_slope_encountered_deg > maxSlopeDeg - 5;
@@ -75,6 +78,7 @@ export function RoutePanel({
       style={{
         flex: "0 1 320px",
         minWidth: 260,
+        maxHeight: "100%",
         display: "flex",
         flexDirection: "column",
         gap: 14,
@@ -84,7 +88,13 @@ export function RoutePanel({
         overflowY: "auto",
       }}
     >
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+        }}
+      >
         <h2
           style={{
             margin: 0,
@@ -114,7 +124,13 @@ export function RoutePanel({
 
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <span className="eyebrow">CLICK THE MAP TO SET</span>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 6 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: 6,
+          }}
+        >
           {PLACING_OPTIONS.map(({ target, label }) => {
             const active = placing === target;
             return (
@@ -139,7 +155,10 @@ export function RoutePanel({
                 }}
               >
                 <span style={{ fontWeight: 600, fontSize: 12 }}>{label}</span>
-                <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                <span
+                  className="mono"
+                  style={{ fontSize: 11, color: "var(--text-muted)" }}
+                >
                   {formatCell(target === "start" ? start : end)}
                 </span>
               </button>
@@ -148,7 +167,15 @@ export function RoutePanel({
         </div>
       </div>
 
-      <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--text-muted)" }}>
+      <label
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          fontSize: 11,
+          color: "var(--text-muted)",
+        }}
+      >
         Suit slope limit
         <input
           type="range"
@@ -177,17 +204,35 @@ export function RoutePanel({
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
-        <StatTile label="DISTANCE" value={route ? `${(route.total_distance_m / 1000).toFixed(2)} km` : "—"} />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: 8,
+        }}
+      >
+        <StatTile
+          label="DISTANCE"
+          value={
+            route ? `${(route.total_distance_m / 1000).toFixed(2)} km` : "—"
+          }
+        />
         <StatTile
           label="MAX SLOPE"
           value={route ? `${route.max_slope_encountered_deg.toFixed(1)}°` : "—"}
           accent
         />
-        <StatTile label="PATH POINTS" value={route ? String(route.waypoint_count) : "—"} />
-        <StatTile label="COMPUTE" value={route ? `${route.compute_ms.toFixed(1)} ms` : "—"} />
+        <StatTile
+          label="PATH POINTS"
+          value={route ? String(route.waypoint_count) : "—"}
+        />
+        <StatTile
+          label="COMPUTE"
+          value={route ? `${route.compute_ms.toFixed(1)} ms` : "—"}
+        />
       </div>
 
+      {children}
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <span className="eyebrow">WAYPOINTS · {site.site_name}</span>
         {site.waypoints.map((wp) => (
