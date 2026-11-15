@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchRoutePlan } from "../api/fetchData.ts";
-import type { RoutePlanResponse, SiteOverview } from "../types/terrain.ts";
+import type { GridCell, RoutePlanResponse } from "../types/terrain.ts";
+
+export interface RoutePlanInput {
+  start: GridCell;
+  end: GridCell;
+  maxSlopeDeg: number;
+}
 
 export function useRoutePlan() {
   const [route, setRoute] = useState<RoutePlanResponse | null>(null);
@@ -8,10 +14,7 @@ export function useRoutePlan() {
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
-  const plan = useCallback((site: SiteOverview, maxSlopeDeg: number) => {
-    if (site.waypoints.length < 2) return;
-    const [from, to] = site.waypoints;
-
+  const plan = useCallback(({ start, end, maxSlopeDeg }: RoutePlanInput) => {
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -19,14 +22,16 @@ export function useRoutePlan() {
     setLoading(true);
     setError(null);
     fetchRoutePlan(
-      { startWaypoint: from.id, endWaypoint: to.id, maxSlopeDeg },
+      { startX: start.x, startY: start.y, endX: end.x, endY: end.y, maxSlopeDeg },
       controller.signal,
     )
       .then((result) => {
         if (!controller.signal.aborted) setRoute(result);
       })
       .catch((err: Error) => {
-        if (!controller.signal.aborted) setError(err.message);
+        if (controller.signal.aborted) return;
+        setRoute(null);
+        setError(err.message);
       })
       .finally(() => {
         if (controllerRef.current === controller) setLoading(false);

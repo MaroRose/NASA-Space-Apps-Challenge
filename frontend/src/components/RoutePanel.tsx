@@ -1,4 +1,6 @@
-import type { RoutePlanResponse, SiteOverview } from "../types/terrain.ts";
+import type { GridCell, RoutePlanResponse, SiteOverview } from "../types/terrain.ts";
+
+export type PlacingTarget = "start" | "end";
 
 interface RoutePanelProps {
   site: SiteOverview;
@@ -6,8 +8,23 @@ interface RoutePanelProps {
   loading: boolean;
   error: string | null;
   maxSlopeDeg: number;
+  minSlopeDeg: number;
+  maxSlopeLimitDeg: number;
+  start: GridCell | null;
+  end: GridCell | null;
+  placing: PlacingTarget;
+  onPlacingChange: (target: PlacingTarget) => void;
   onMaxSlopeChange: (value: number) => void;
   onRecompute: () => void;
+}
+
+const PLACING_OPTIONS: { target: PlacingTarget; label: string }[] = [
+  { target: "start", label: "Start" },
+  { target: "end", label: "Destination" },
+];
+
+function formatCell(cell: GridCell | null) {
+  return cell ? `(${cell.x}, ${cell.y})` : "—";
 }
 
 function StatTile({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
@@ -39,6 +56,12 @@ export function RoutePanel({
   loading,
   error,
   maxSlopeDeg,
+  minSlopeDeg,
+  maxSlopeLimitDeg,
+  start,
+  end,
+  placing,
+  onPlacingChange,
   onMaxSlopeChange,
   onRecompute,
 }: RoutePanelProps) {
@@ -89,12 +112,48 @@ export function RoutePanel({
         </span>
       </div>
 
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <span className="eyebrow">CLICK THE MAP TO SET</span>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 6 }}>
+          {PLACING_OPTIONS.map(({ target, label }) => {
+            const active = placing === target;
+            return (
+              <button
+                key={target}
+                type="button"
+                aria-pressed={active}
+                onClick={() => onPlacingChange(target)}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: 2,
+                  minHeight: 44,
+                  padding: "6px 10px",
+                  borderRadius: 10,
+                  border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+                  background: "var(--surface-2)",
+                  color: "var(--text)",
+                  textAlign: "left",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ fontWeight: 600, fontSize: 12 }}>{label}</span>
+                <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  {formatCell(target === "start" ? start : end)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--text-muted)" }}>
         Suit slope limit
         <input
           type="range"
-          min={10}
-          max={30}
+          min={minSlopeDeg}
+          max={maxSlopeLimitDeg}
           value={maxSlopeDeg}
           onChange={(e) => onMaxSlopeChange(Number(e.target.value))}
         />
