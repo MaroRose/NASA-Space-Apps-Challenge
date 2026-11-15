@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import L from "leaflet";
 import {
   Circle,
@@ -17,6 +17,8 @@ import {
 import "../styles/map.css";
 import type { GridCell, RoutePlanResponse, SiteOverview } from "../types/terrain.ts";
 import { GridCRS, cellToLatLng } from "../lib/gridCrs.ts";
+import { latLonToGridPoint, type GridGeoref } from "../lib/marsCoords.ts";
+import type { RoverPath } from "../hooks/useRoverPath.ts";
 
 export interface LayerVisibility {
   imagery: boolean;
@@ -26,6 +28,7 @@ export interface LayerVisibility {
   route: boolean;
   waypoints: boolean;
   walkbackRing: boolean;
+  roverPath: boolean;
 }
 
 interface TerrainMapProps {
@@ -41,6 +44,8 @@ interface TerrainMapProps {
   start?: GridCell | null;
   end?: GridCell | null;
   position?: GridCell | null;
+  georef?: GridGeoref | null;
+  roverPath?: RoverPath | null;
   onPointHover?: (gridX: number, gridY: number) => void;
   onPointLeave?: () => void;
   onPointPick?: (gridX: number, gridY: number) => void;
@@ -64,9 +69,28 @@ const positionIcon = L.divIcon({
   html: '<span class="position-marker"></span>',
 });
 
-const ENDPOINT_STYLE = { color: "var(--bg)", weight: 2, fillColor: "var(--accent)", fillOpacity: 1 };
+const roverLandingIcon = L.divIcon({
+  className: "",
+  iconSize: [0, 0],
+  html: '<span class="rover-marker"></span>',
+});
 
-function FitGrid({ bounds }: { bounds: L.LatLngBounds }) {
+const roverCurrentIcon = L.divIcon({
+  className: "",
+  iconSize: [0, 0],
+  html: '<span class="rover-marker rover-marker--current"></span>',
+});
+
+const ENDPOINT_STYLE = { color: "var(--bg)", weight: 2, fillColor: "var(--accent)", fillOpacity: 1 };
+const ROVER_SITE_STYLE = { color: "var(--rover)", weight: 1.5, fillColor: "var(--bg)", fillOpacity: 0.8 };
+
+interface FitGridProps {
+  bounds: L.LatLngBounds;
+  // Widest area the user may pan/zoom to; defaults to the grid itself.
+  extent?: L.LatLngBounds;
+}
+
+function FitGrid({ bounds, extent = bounds }: FitGridProps) {
   const map = useMap();
   useEffect(() => {
     let userMoved = false;
@@ -80,7 +104,8 @@ function FitGrid({ bounds }: { bounds: L.LatLngBounds }) {
       fitting = true;
       map.invalidateSize({ animate: false });
       map.setMinZoom(-10);
-      const fitZoom = map.getBoundsZoom(bounds);
+      map.setMaxBounds(extent.pad(0.25));
+      const fitZoom = map.getBoundsZoom(extent);
       if (!userMoved) map.fitBounds(bounds, { animate: false });
       map.setMinZoom(fitZoom - 0.5);
       fitting = false;
@@ -93,8 +118,35 @@ function FitGrid({ bounds }: { bounds: L.LatLngBounds }) {
       observer.disconnect();
       map.off("dragstart zoomstart", markMoved);
     };
-  }, [map, bounds]);
+  }, [map, bounds, extent]);
   return null;
+}
+
+interface FitToggleProps {
+  gridBounds: L.LatLngBounds;
+  traverseBounds: L.LatLngBounds;
+}
+
+function FitToggle({ gridBounds, traverseBounds }: FitToggleProps) {
+  const map = useMap();
+  const [showingTraverse, setShowingTraverse] = useState(false);
+  const fit = (bounds: L.LatLngBounds, traverse: boolean) => {
+    map.fitBounds(bounds, { animate: true, padding: [12, 12] });
+    setShowingTraverse(traverse);
+  };
+  return (
+    <button
+      type="button"
+      className="rover-fit"
+      onClick={(e) => {
+        e.stopPropagation();
+        if (showingTraverse) fit(gridBounds, false);
+        else fit(traverseBounds, true);
+      }}
+    >
+      {showingTraverse ? "Back to EVA grid" : "Show full Curiosity traverse"}
+    </button>
+  );
 }
 
 interface MapEventsProps {
@@ -132,6 +184,8 @@ export function TerrainMap({
   start,
   end,
   position,
+  georef,
+  roverPath,
   onPointHover,
   onPointLeave,
   onPointPick,
@@ -155,6 +209,32 @@ export function TerrainMap({
   const routeStart = route?.path_coordinates[0] ?? start;
   const routeEnd = route?.path_coordinates[route.path_coordinates.length - 1] ?? end;
 
+  const resolutionM = site.resolution_m;
+  const rover = useMemo(() => {
+    if (!georef || !roverPath || resolutionM <= 0) return null;
+    const toLatLng = (p: { lat: number; lon: number }): L.LatLngTuple => {
+      const g = latLonToGridPoint(georef, p, resolutionM);
+      return [g.y, g.x];
+    };
+    const line = roverPath.points.map(toLatLng);
+    return {
+      line,
+      landing: toLatLng(roverPath.landing),
+      latest: toLatLng(roverPath.latest),
+      sites: roverPath.sites.map((s) => ({ name: s.name, position: toLatLng(s) })),
+      bounds: L.latLngBounds(line),
+    };
+  }, [georef, roverPath, resolutionM]);
+
+  const showRover = layers.roverPath && rover !== null;
+  const extent = useMemo(
+    () =>
+      showRover && rover
+        ? L.latLngBounds(bounds.getSouthWest(), bounds.getNorthEast()).extend(rover.bounds)
+        : bounds,
+    [showRover, rover, bounds],
+  );
+
   return (
     <MapContainer
       className="terrain-map"
@@ -170,8 +250,9 @@ export function TerrainMap({
       attributionControl={false}
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
     >
-      <FitGrid bounds={bounds} />
+      <FitGrid bounds={bounds} extent={extent} />
       <ZoomControl position="bottomright" />
+      {showRover && rover && <FitToggle gridBounds={bounds} traverseBounds={rover.bounds} />}
       <MapEvents
         rows={rows}
         cols={cols}
@@ -204,6 +285,41 @@ export function TerrainMap({
       <Pane name="hazard" style={{ zIndex: 250 }}>
         {layers.hazard && hazardImageUrl && (
           <ImageOverlay url={hazardImageUrl} bounds={bounds} className="hazard-raster" />
+        )}
+      </Pane>
+
+      <Pane name="rover" style={{ zIndex: 260 }}>
+        {showRover && rover && (
+          <>
+            <Polyline
+              positions={rover.line}
+              interactive={false}
+              pathOptions={{ color: "var(--bg)", opacity: 0.6, weight: 5 }}
+            />
+            <Polyline positions={rover.line} pathOptions={{ color: "var(--rover)", weight: 2 }}>
+              <Tooltip sticky direction="top" offset={[0, -8]}>
+                Curiosity traverse · sols {roverPath?.landing.sol}–{roverPath?.latest.sol} ·{" "}
+                {roverPath?.latest.odometryKm.toFixed(1)} km
+              </Tooltip>
+            </Polyline>
+            {rover.sites.map((s) => (
+              <CircleMarker key={s.name} center={s.position} radius={5} pathOptions={ROVER_SITE_STYLE}>
+                <Tooltip direction="top" offset={[0, -6]} className="wp-label rover-label">
+                  {s.name}
+                </Tooltip>
+              </CircleMarker>
+            ))}
+            <Marker position={rover.landing} icon={roverLandingIcon} interactive={false}>
+              <Tooltip permanent direction="bottom" offset={[0, 18]} className="wp-label rover-label">
+                Curiosity landing · sol {roverPath?.landing.sol}
+              </Tooltip>
+            </Marker>
+            <Marker position={rover.latest} icon={roverCurrentIcon} interactive={false}>
+              <Tooltip permanent direction="right" offset={[10, 0]} className="wp-label rover-label">
+                Curiosity · sol {roverPath?.latest.sol}
+              </Tooltip>
+            </Marker>
+          </>
         )}
       </Pane>
 
