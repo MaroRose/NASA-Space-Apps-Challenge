@@ -31,8 +31,9 @@ function buildUrl(path: EndpointPath, params?: QueryParams): string {
 async function getJson<T>(
   path: EndpointPath,
   params?: QueryParams,
+  signal?: AbortSignal,
 ): Promise<T> {
-  const response = await fetch(buildUrl(path, params));
+  const response = await fetch(buildUrl(path, params), { signal });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     throw new Error(body.detail ?? `Request failed (${response.status})`);
@@ -44,31 +45,37 @@ export function fetchHealth(): Promise<HealthStatus> {
   return getJson<HealthStatus>(paths.health);
 }
 
-export function fetchSiteOverview(): Promise<SiteOverview> {
-  return getJson<SiteOverview>(paths.siteOverview);
+export function fetchSiteOverview(signal?: AbortSignal): Promise<SiteOverview> {
+  return getJson<SiteOverview>(paths.siteOverview, undefined, signal);
 }
 
 export function fetchTerrainPoint(
   x: number,
   y: number,
+  signal?: AbortSignal,
 ): Promise<TerrainPointInfo> {
-  return getJson<TerrainPointInfo>(paths.terrainPoint, {
-    x: Math.round(x),
-    y: Math.round(y),
-  });
+  return getJson<TerrainPointInfo>(
+    paths.terrainPoint,
+    { x: Math.round(x), y: Math.round(y) },
+    signal,
+  );
 }
 
-export async function fetchRoutePlan({
-  startX,
-  startY,
-  endX,
-  endY,
-  startWaypoint,
-  endWaypoint,
-  maxSlopeDeg = 20,
-}: RoutePlanRequest): Promise<RoutePlanResponse> {
+export async function fetchRoutePlan(
+  {
+    startX,
+    startY,
+    endX,
+    endY,
+    startWaypoint,
+    endWaypoint,
+    maxSlopeDeg = 20,
+  }: RoutePlanRequest,
+  signal?: AbortSignal,
+): Promise<RoutePlanResponse> {
   const response = await fetch(buildUrl(paths.routePlan), {
     method: "POST",
+    signal,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       start_x: startX,

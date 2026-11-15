@@ -18,6 +18,7 @@ interface TerrainMapProps {
   terrainImageUrl?: string;
   hazardImageUrl?: string;
   onPointHover?: (gridX: number, gridY: number) => void;
+  onPointLeave?: () => void;
 }
 
 export function TerrainMap({
@@ -29,6 +30,7 @@ export function TerrainMap({
   terrainImageUrl,
   hazardImageUrl,
   onPointHover,
+  onPointLeave,
 }: TerrainMapProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [rows, cols] = site.grid_shape;
@@ -61,6 +63,7 @@ export function TerrainMap({
       role="img"
       aria-label={`Map of ${site.site_name}`}
       onMouseMove={handleMove}
+      onMouseLeave={onPointLeave}
       style={{
         position: "absolute",
         inset: 0,
