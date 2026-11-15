@@ -30,6 +30,7 @@ function App() {
 
   const [layers, setLayers] = useState<LayerVisibility>(DEFAULT_LAYERS);
   const [maxSlopeDeg, setMaxSlopeDeg] = useState(20);
+  const [activeView, setActiveView] = useState<"terrain" | "mission">("terrain");
 
   const [pickedStart, setPickedStart] = useState<GridCell | null>(null);
   const [pickedEnd, setPickedEnd] = useState<GridCell | null>(null);
@@ -97,88 +98,128 @@ function App() {
             {site.resolution_m} m/px
           </span>
         </div>
+        <nav aria-label="Planner views" style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+          <button
+            type="button"
+            aria-pressed={activeView === "terrain"}
+            onClick={() => setActiveView("terrain")}
+            style={{
+              padding: "8px 12px",
+              border: "1px solid var(--border)",
+              borderRadius: 8,
+              background: activeView === "terrain" ? "var(--info)" : "var(--surface)",
+              color: "var(--text)",
+              cursor: "pointer",
+            }}
+          >
+            Terrain planner
+          </button>
+          <button
+            type="button"
+            aria-pressed={activeView === "mission"}
+            onClick={() => setActiveView("mission")}
+            style={{
+              padding: "8px 12px",
+              border: "1px solid var(--border)",
+              borderRadius: 8,
+              background: activeView === "mission" ? "var(--info)" : "var(--surface)",
+              color: "var(--text)",
+              cursor: "pointer",
+            }}
+          >
+            Mission I/O
+          </button>
+        </nav>
       </header>
 
-      <div style={{ display: "flex", flexWrap: "wrap", flex: "1 1 auto", minHeight: 0 }}>
-        <LayerRail layers={layers} onChange={setLayers} />
+      {activeView === "terrain" ? (
+        <div style={{ display: "flex", flexWrap: "wrap", flex: "1 1 auto", minHeight: 0 }}>
+          <LayerRail layers={layers} onChange={setLayers} />
 
-        <section
-          style={{
-            flex: "999 1 560px",
-            minWidth: 0,
-            minHeight: 0,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <div style={{ position: "relative", flex: "1 1 auto", minHeight: 0 }}>
-            <TerrainMap
-              site={site}
-              route={route}
-              layers={layers}
-              walkbackM={WALKBACK_M}
-              habitatId={HABITAT_ID}
-              terrainImageUrl="/terrain/hillshade.png"
-              hazardImageUrl={`/terrain/hazard-${hazardLimit}.png`}
-              start={start}
-              end={end}
-              onPointHover={onHover}
-              onPointLeave={clearInspected}
-              onPointPick={handlePick}
-            />
+          <section
+            style={{
+              flex: "999 1 560px",
+              minWidth: 0,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div style={{ position: "relative", flex: "1 1 auto", minHeight: 0 }}>
+              <TerrainMap
+                site={site}
+                route={route}
+                layers={layers}
+                walkbackM={WALKBACK_M}
+                habitatId={HABITAT_ID}
+                terrainImageUrl="/terrain/hillshade.png"
+                hazardImageUrl={`/terrain/hazard-${hazardLimit}.png`}
+                start={start}
+                end={end}
+                onPointHover={onHover}
+                onPointLeave={clearInspected}
+                onPointPick={handlePick}
+              />
 
-            {inspected && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: 16,
-                  top: 16,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 4,
-                  padding: "10px 12px",
-                  minWidth: 180,
-                  background: "rgba(18,22,29,0.94)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 10,
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 11,
-                  pointerEvents: "none",
-                }}
-              >
-                <span className="eyebrow" style={{ fontFamily: "var(--font-body)" }}>
-                  POINT INSPECTOR
-                </span>
-                <span>cell ({inspected.x}, {inspected.y})</span>
-                <span>elev {inspected.elev_m.toFixed(1)} m</span>
-                <span style={{ color: inspected.is_hazard ? "var(--danger)" : "var(--text)" }}>
-                  slope {inspected.slope_deg.toFixed(1)}° {inspected.is_hazard ? "HAZARD" : ""}
-                </span>
-              </div>
-            )}
-          </div>
+              {inspected && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 16,
+                    top: 16,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                    padding: "10px 12px",
+                    minWidth: 180,
+                    background: "rgba(18,22,29,0.94)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 10,
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    pointerEvents: "none",
+                  }}
+                >
+                  <span className="eyebrow" style={{ fontFamily: "var(--font-body)" }}>
+                    POINT INSPECTOR
+                  </span>
+                  <span>cell ({inspected.x}, {inspected.y})</span>
+                  <span>elev {inspected.elev_m.toFixed(1)} m</span>
+                  <span style={{ color: inspected.is_hazard ? "var(--danger)" : "var(--text)" }}>
+                    slope {inspected.slope_deg.toFixed(1)}° {inspected.is_hazard ? "HAZARD" : ""}
+                  </span>
+                </div>
+              )}
+            </div>
 
-          <ElevationProfile route={route} maxSlopeDeg={maxSlopeDeg} />
-        </section>
+            <ElevationProfile route={route} maxSlopeDeg={maxSlopeDeg} />
+          </section>
 
-        <RoutePanel
-          site={site}
-          route={route}
-          loading={routeLoading}
-          error={routeError}
-          maxSlopeDeg={maxSlopeDeg}
-          minSlopeDeg={MIN_SLOPE_LIMIT_DEG}
-          maxSlopeLimitDeg={MAX_SLOPE_LIMIT_DEG}
-          start={start}
-          end={end}
-          placing={placing}
-          onPlacingChange={setPlacing}
-          onMaxSlopeChange={setMaxSlopeDeg}
-          onRecompute={() => {
-            if (start && end) plan({ start, end, maxSlopeDeg });
-          }}
+          <RoutePanel
+            site={site}
+            route={route}
+            loading={routeLoading}
+            error={routeError}
+            maxSlopeDeg={maxSlopeDeg}
+            minSlopeDeg={MIN_SLOPE_LIMIT_DEG}
+            maxSlopeLimitDeg={MAX_SLOPE_LIMIT_DEG}
+            start={start}
+            end={end}
+            placing={placing}
+            onPlacingChange={setPlacing}
+            onMaxSlopeChange={setMaxSlopeDeg}
+            onRecompute={() => {
+              if (start && end) plan({ start, end, maxSlopeDeg });
+            }}
+          />
+        </div>
+      ) : (
+        <iframe
+          src="/p5js/index.html"
+          title="Mission data planner"
+          style={{ flex: "1 1 auto", width: "100%", minHeight: 0, border: 0 }}
         />
-      </div>
+      )}
     </div>
   );
 }

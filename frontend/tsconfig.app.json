@@ -23,5 +23,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "../p5js/path-finder.js.js"../p5js/json-handler.jsler.js"]
+  "include": ["src"]
 }

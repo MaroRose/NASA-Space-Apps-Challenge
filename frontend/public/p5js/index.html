@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mars Walk Planner I/O page</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Mars Walk Planner I/O page</h1>
+      <p id="status" role="status">Loading map and mission data…</p>
+
+      <div id="controls">
+        <button id="upload-data" type="button" disabled>
+          Upload mission data
+        </button>
+
+        <button id="download-mission" type="button" disabled>
+          Download mission results
+        </button>
+
+        <button id="download-path" type="button" disabled>
+          Download path coordinates
+        </button>
+        <p id="mission-input"></p>
+        <p id="metrics"></p>
+      </div>
+      <div id="sketch-container"></div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.min.js"></script>
+    <script type="module" src="./mapWindow.js"></script>
+  </body>
+</html>

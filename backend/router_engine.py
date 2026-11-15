@@ -3,6 +3,10 @@ import math
 import time
 import numpy as np
 
+# Weighted A* favors responsive routes over guaranteed minimum-cost routes.
+HEURISTIC_WEIGHT = 3.0
+MAX_SEARCH_NODES = 40000
+
 
 def _find_nearest_safe_cell(
     x: int, y: int, slope: np.ndarray, max_slope: float, radius: int
@@ -92,17 +96,19 @@ def calculate_path(
     came_from: dict[tuple[int, int], tuple[int, int]] = {}
     g_score: dict[tuple[int, int], float] = {(start_x, start_y): 0.0}
 
-    MAX_ITERATIONS = 40000
     iterations = 0
     inv_max_slope = 2.0 / max_slope_deg
     elev_weight = 0.5 / stride
 
     while open_set:
         iterations += 1
-        if iterations > MAX_ITERATIONS:
+        if iterations > MAX_SEARCH_NODES:
             return {
                 "path": [],
-                "reason": f"Exceeded {MAX_ITERATIONS} search nodes (impassable canyon/ridge).",
+                "reason": (
+                    f"Route search reached its {MAX_SEARCH_NODES}-node limit. "
+                    "Try increasing the slope limit or choosing closer endpoints."
+                ),
                 "compute_ms": round((time.perf_counter() - t0) * 1000, 2),
             }
 
@@ -180,7 +186,7 @@ def calculate_path(
             if tentative_g < g_score.get((nx, ny), float("inf")):
                 came_from[(nx, ny)] = (cx, cy)
                 g_score[(nx, ny)] = tentative_g
-                h_score = math.hypot(end_x - nx, end_y - ny) * 1.25
+                h_score = math.hypot(end_x - nx, end_y - ny) * HEURISTIC_WEIGHT
                 heapq.heappush(open_set, (tentative_g + h_score, tentative_g, nx, ny))
 
     return {
