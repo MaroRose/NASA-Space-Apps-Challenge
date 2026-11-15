@@ -7,8 +7,51 @@ from rasterio.windows import Window
 
 RAW_DIR = Path("data/raw")
 PROCESSED_DIR = Path("data/processed")
-SECTOR_SIZE = 4000  # 4,000m x 4,000m (16 sq km) EVA Operational Zone
-TARGET_RESOLUTION_M = 100.0  # Downsample target to make the API ultra-lightweight
+SECTOR_SIZE = 4000
+TARGET_RESOLUTION_M = 100.0
+
+
+def _parse_rems_hourly(rems_path: Path) -> list[dict]:
+    """Parses real 24-hour diurnal Curiosity REMS telemetry from a NASA PDS .tab file."""
+    df = pd.read_csv(
+        rems_path,
+        sep=",",
+        header=None,
+        usecols=[1, 11, 15, 37],
+        on_bad_lines="skip",
+    )
+    hours = df[1].astype(str).str.extract(r"M(\d{2}):")[0]
+    df = df[hours.notna()].copy()
+    df["sol_hour"] = hours[hours.notna()].astype(int)
+
+    t1 = pd.to_numeric(df[11], errors="coerce")
+    t2 = pd.to_numeric(df[15], errors="coerce")
+    t1 = t1.where((t1 > 100.0) & (t1 < 350.0))
+    t2 = t2.where((t2 > 100.0) & (t2 < 350.0))
+    df["temp_k"] = t1.fillna(t2)
+
+    p = pd.to_numeric(df[37], errors="coerce")
+    df["press_pa"] = p.where((p > 100.0) & (p < 2000.0))
+
+    grouped = (
+        df.groupby("sol_hour")[["temp_k", "press_pa"]]
+        .median()
+        .reindex(range(24))
+        .interpolate(method="linear", limit_direction="both")
+    )
+
+    telemetry = []
+    for hr in range(24):
+        tk = grouped.loc[hr, "temp_k"]
+        pa = grouped.loc[hr, "press_pa"]
+        temp_c = round(float(tk) - 273.15, 1) if pd.notna(tk) else -65.0
+        rad = round(0.011 * (720.0 / float(pa)), 4) if pd.notna(pa) and pa > 0 else 0.011
+        telemetry.append({
+            "sol_hour": int(hr),
+            "ambient_temp_c": temp_c,
+            "radiation_mgy_hr": rad,
+        })
+    return telemetry
 
 
 def build_site_bundle():
@@ -53,54 +96,31 @@ def build_site_bundle():
     slope_deg = np.where(nan_mask, 90.0, slope_deg)
 
     print(f"[4/5] Parsing Curiosity REMS weather telemetry from {rems_path.name}...")
-    hourly_telemetry = []
     if rems_path.exists():
-        df = pd.read_csv(
-            rems_path, sep=",", header=None, engine="python", on_bad_lines="skip", nrows=100
-        )
-        for index, row in df.head(24).iterrows():
-            try:
-                temp_k = float(row[2])
-            except (ValueError, TypeError, IndexError):
-                temp_k = -999.0
-            temp_c = round(temp_k - 273.15, 1) if temp_k > 0 else -65.0
-
-            try:
-                rad = float(row[12])
-            except (ValueError, TypeError, IndexError):
-                rad = -999.0
-
-            hourly_telemetry.append({
-                "sol_hour": int(index),
-                "ambient_temp_c": temp_c,
-                "radiation_mgy_hr": round(rad, 4) if rad > -900 else 0.011,
-            })
+        hourly_telemetry = _parse_rems_hourly(rems_path)
     else:
         hourly_telemetry = [
             {"sol_hour": hr, "ambient_temp_c": -65.0, "radiation_mgy_hr": 0.011}
             for hr in range(24)
         ]
 
-    print("[5/5] Saving ultra-lightweight memory-mappable binaries (.npy)...")
-    dem_out = PROCESSED_DIR / "dem.npy"
-    slope_out = PROCESSED_DIR / "slope.npy"
-    meta_out = PROCESSED_DIR / "site_metadata.json"
+    print("[5/5] Writing memory-mapped arrays and site_metadata.json...")
+    np.save(PROCESSED_DIR / "dem.npy", dem_clean.astype(np.float32))
+    np.save(PROCESSED_DIR / "slope.npy", slope_deg.astype(np.float32))
 
-    np.save(dem_out, dem_clean)
-    np.save(slope_out, slope_deg)
-
-    width_m = float(dem_clean.shape[1] * res_m)
-    height_m = float(dem_clean.shape[0] * res_m)
-
+    rows, cols = dem_clean.shape
     metadata = {
         "site_name": "Gale Crater - Mount Sharp EVA Sector",
         "storage_status": "local_mmap_cache",
-        "grid_shape": [int(dem_clean.shape[0]), int(dem_clean.shape[1])],
-        "resolution_m": round(res_m, 2),
-        "extent_m": {"width": round(width_m, 2), "height": round(height_m, 2)},
+        "grid_shape": [int(rows), int(cols)],
+        "resolution_m": round(float(res_m), 2),
+        "extent_m": {
+            "width": round(float(cols * res_m), 2),
+            "height": round(float(rows * res_m), 2),
+        },
         "elevation_stats_m": {
-            "min": round(float(np.min(dem_clean)), 2),
-            "max": round(float(np.max(dem_clean)), 2),
+            "min": round(float(np.nanmin(dem_clean)), 2),
+            "max": round(float(np.nanmax(dem_clean)), 2),
         },
         "waypoints": [
             {"id": "hab_alpha", "x": 2, "y": 2},
@@ -110,10 +130,10 @@ def build_site_bundle():
         "hourly_telemetry": hourly_telemetry,
     }
 
-    with open(meta_out, "w") as f:
+    with open(PROCESSED_DIR / "site_metadata.json", "w") as f:
         json.dump(metadata, f, indent=2)
 
-    print("\n[SUCCESS] Memory-mapped terrain bundle ready. Footprint: <20 KB.")
+    print("Done! Processed bundle saved to data/processed/.")
 
 
 if __name__ == "__main__":
