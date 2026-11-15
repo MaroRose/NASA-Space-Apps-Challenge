@@ -258,10 +258,6 @@ export class PathFinder {
   }
 
   calculateTotalPathLength() {
-    // let totalLength = 0;
-    // for (let i = 0; i < this.path.length - 1; i += 1) {
-    //   totalLength += this.distance(this.path[i], this.path[i + 1]);
-    // }
     return this.missionMetrics.calculateTotalPathLength();
   }
 
@@ -279,8 +275,8 @@ export class PathFinder {
 
   missionOutputCsv() {
     return [
-      "totalPathLength,totalTime,fuelCost",
-      `${this.calculateTotalPathLength()},${this.calculateTotalTime()},${this.calculateFuelCost()}`,
+      "totalPathLength,totalTime,fuelCost,payload",
+      `${this.calculateTotalPathLength()},${this.calculateTotalTime()},${this.calculateFuelCost()},${this.calculatePayloadWeight()}`,
     ].join("\n");
   }
 
