@@ -29,8 +29,6 @@ function App() {
 
   useEffect(() => {
     if (site) plan(site, maxSlopeDeg);
-    // Intentionally keyed on site only: route recompute on slope change is explicit
-    // (via the Recompute button) so dragging the slider doesn't spam the API.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site, plan]);
 
