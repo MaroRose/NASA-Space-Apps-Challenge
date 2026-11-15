@@ -18,7 +18,9 @@ type EndpointPath = "/health" | "/site/overview" | "/terrain/point" | "/route/pl
 type QueryParams = Record<string, string | number>;
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000/api/v1";
+  import.meta.env.VITE_API_BASE ??
+  (import.meta.env.DEV ? "http://127.0.0.1:8000/api/v1" : "/api/v1");
+
 
 function buildUrl(path: EndpointPath, params?: QueryParams): string {
   if (!params) return `${API_BASE}${path}`;
