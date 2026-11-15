@@ -189,14 +189,17 @@ export function TelemetryPanel({
           }
         />
         <Stat
-          label="Radiation dose"
+          label="Radiation dose (modelled)"
           value={estimate ? `${(estimate.doseMgy * 1000).toFixed(1)} µGy` : "—"}
         />
       </div>
 
       <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
-        One-way walk at {WALK_SPEED_M_PER_S.toFixed(1)} m/s. Radiation is a
-        pressure-based estimate.
+        One-way walk at {WALK_SPEED_M_PER_S.toFixed(1)} m/s. Radiation is
+        modelled, not measured: a 0.011 mGy/h surface baseline scaled by REMS air
+        pressure, since a thicker atmosphere shields more. The baseline matches
+        the order of magnitude Curiosity&apos;s RAD instrument recorded (about
+        0.2 mGy/day). Next step: replace it with the RAD time series.
         {isPlaceholderTelemetry(hours) &&
           " Telemetry is placeholder: the pipeline ran without REMS data."}
       </span>

@@ -1,0 +1,10 @@
+{
+  "left_m": 8143894.492786024,
+  "top_m": -269906.075189438,
+  "right_m": 8147894.492786024,
+  "bottom_m": -273906.075189438,
+  "mars_radius_m": 3396190,
+  "projection": "Equirectangular, central meridian 0, Mars 2000 sphere",
+  "source": "Estimated by matching dem.npy against the USGS MSL Gale merged DEM (MSL_Gale_DEM_Mosaic_1m_v3.tif), not read from gale_test.tif",
+  "accuracy_m": 10
+}

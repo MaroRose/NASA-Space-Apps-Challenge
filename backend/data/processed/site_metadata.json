@@ -21,14 +21,14 @@
       "y": 20
     },
     {
-      "id": "wp_ridge",
-      "x": 150,
-      "y": 180
+      "id": "bradbury_landing",
+      "x": 292,
+      "y": 214
     },
     {
-      "id": "wp_boxwork",
-      "x": 320,
-      "y": 320
+      "id": "yellowknife_bay",
+      "x": 318,
+      "y": 219
     }
   ],
   "hourly_telemetry": [
