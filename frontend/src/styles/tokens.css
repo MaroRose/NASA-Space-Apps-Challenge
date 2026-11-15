@@ -1,0 +1,53 @@
+/* Design tokens — mirrors frontend/design/DESIGN.md. Keep both in sync. */
+
+:root {
+  --bg: #0b0e13;
+  --surface: #12161d;
+  --surface-2: #171c25;
+  --surface-3: #1f2632;
+  --border: #252c38;
+  --border-muted: #3a4453;
+
+  --text: #e8ecf2;
+  --text-soft: #cfd6e0;
+  --text-muted: #94a0b3;
+
+  --accent: #f5a524;
+  --accent-ink: #1a1200;
+  --info: #5cc8e8;
+  --danger: #e5484d;
+  --danger-stroke: #ff6b6b;
+
+  --terrain-base: #3a2419;
+  --terrain-light: #5a3826;
+  --terrain-dark: #241610;
+  --terrain-ridge: #7a4f38;
+  --terrain-contour: #9c7256;
+  --terrain-contour-label: #c8a98f;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --font-body: Inter, system-ui, sans-serif;
+
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
