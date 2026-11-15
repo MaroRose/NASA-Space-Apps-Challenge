@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import "./styles/tokens.css";
-import { fetchRoutePlan, fetchSiteOverview, fetchTerrainPoint } from "./api/fetchData.ts";
-import type { RoutePlanResponse, SiteOverview, TerrainPointInfo } from "./types/terrain.ts";
 import { TerrainMap, type LayerVisibility } from "./components/TerrainMap.tsx";
 import { LayerRail } from "./components/LayerRail.tsx";
 import { RoutePanel } from "./components/RoutePanel.tsx";
 import { ElevationProfile } from "./components/ElevationProfile.tsx";
+import { useSiteOverview } from "./hooks/useSiteOverview.ts";
+import { useRoutePlan } from "./hooks/useRoutePlan.ts";
+import { useTerrainInspector } from "./hooks/useTerrainInspector.ts";
 
 const DEFAULT_LAYERS: LayerVisibility = {
   imagery: true,
@@ -19,57 +20,17 @@ const WALKBACK_M = 1500;
 const HOVER_THROTTLE_MS = 150;
 
 function App() {
-  const [site, setSite] = useState<SiteOverview | null>(null);
-  const [siteError, setSiteError] = useState<string | null>(null);
-
-  const [route, setRoute] = useState<RoutePlanResponse | null>(null);
-  const [routeLoading, setRouteLoading] = useState(false);
-  const [routeError, setRouteError] = useState<string | null>(null);
+  const { site, error: siteError } = useSiteOverview();
+  const { route, loading: routeLoading, error: routeError, plan } = useRoutePlan();
+  const { inspected, onHover, clear: clearInspected } = useTerrainInspector(HOVER_THROTTLE_MS);
 
   const [layers, setLayers] = useState<LayerVisibility>(DEFAULT_LAYERS);
   const [maxSlopeDeg, setMaxSlopeDeg] = useState(20);
-  const [inspected, setInspected] = useState<TerrainPointInfo | null>(null);
-
-  const lastHoverRef = useRef(0);
-
-  const runRoute = useCallback(
-    (overview: SiteOverview, slopeLimit: number) => {
-      if (overview.waypoints.length < 2) return;
-      const [from, to] = overview.waypoints;
-      setRouteLoading(true);
-      setRouteError(null);
-      fetchRoutePlan({
-        startWaypoint: from.id,
-        endWaypoint: to.id,
-        maxSlopeDeg: slopeLimit,
-      })
-        .then(setRoute)
-        .catch((err: Error) => setRouteError(err.message))
-        .finally(() => setRouteLoading(false));
-    },
-    [],
-  );
 
   useEffect(() => {
-    fetchSiteOverview()
-      .then((overview) => {
-        setSite(overview);
-        runRoute(overview, maxSlopeDeg);
-      })
-      .catch((err: Error) => setSiteError(err.message));
-    // Intentionally one-shot: route recompute on slope change is explicit
-    // (via the Recompute button) so dragging the slider doesn't spam the API.
+    if (site) plan(site, maxSlopeDeg);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function handleHover(gridX: number, gridY: number) {
-    const now = performance.now();
-    if (now - lastHoverRef.current < HOVER_THROTTLE_MS) return;
-    lastHoverRef.current = now;
-    fetchTerrainPoint(gridX, gridY)
-      .then(setInspected)
-      .catch(() => setInspected(null));
-  }
+  }, [site, plan]);
 
   if (siteError) {
     return (
@@ -126,7 +87,8 @@ function App() {
               route={route}
               layers={layers}
               walkbackM={WALKBACK_M}
-              onPointHover={handleHover}
+              onPointHover={onHover}
+              onPointLeave={clearInspected}
             />
 
             {inspected && (
@@ -169,7 +131,7 @@ function App() {
           error={routeError}
           maxSlopeDeg={maxSlopeDeg}
           onMaxSlopeChange={setMaxSlopeDeg}
-          onRecompute={() => runRoute(site, maxSlopeDeg)}
+          onRecompute={() => plan(site, maxSlopeDeg)}
         />
       </div>
     </div>
