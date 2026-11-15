@@ -1,10 +1,10 @@
 import json
 import os
 from pathlib import Path
-import numpy as np
+import re
+
 import pandas as pd
-import rasterio
-from rasterio.windows import Window
+from terrain_tiles import TiledRasterGrid
 
 # Optional Azure Blob Storage integration for Hackathon Cloud Criteria
 try:
@@ -15,11 +15,12 @@ except ImportError:
 
 RAW_DIR = Path(__file__).resolve().parent / "data" / "raw"
 PROCESSED_DIR = Path(__file__).resolve().parent / "data" / "processed"
-SECTOR_SIZE = 4000  # 4,000m x 4,000m (16 sq km) EVA Operational Zone
+TILES_DIR = Path(__file__).resolve().parent.parent / "gale_tiles"
+TILE_PATTERN = re.compile(r"tile_r\d+_c\d+\.tif$")
 
 
 def upload_to_azure_blob(file_paths: list[Path]) -> str:
-    """Uploads compiled terrain matrices to Azure Blob Storage if configured."""
+    """Uploads terrain tile files to Azure Blob Storage if configured."""
     conn_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
     container_name = os.getenv("AZURE_CONTAINER_NAME", "marswalk-terrain")
 
@@ -46,41 +47,23 @@ def upload_to_azure_blob(file_paths: list[Path]) -> str:
 
 def build_site_bundle():
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-    dem_path = RAW_DIR / "gale_test.tif"
     rems_path = RAW_DIR / "rems_data.tab"
 
-    print(f"[1/4] Window-extracting {SECTOR_SIZE}x{SECTOR_SIZE}m center sector from {dem_path.name}...")
-    with rasterio.open(dem_path) as src:
-        # Target the dead-center of the strip to avoid rotated NoData corners
-        row_off = max(0, (src.height // 2) - (SECTOR_SIZE // 2))
-        col_off = max(0, (src.width // 2) - (SECTOR_SIZE // 2))
-        win_h = min(SECTOR_SIZE, src.height - row_off)
-        win_w = min(SECTOR_SIZE, src.width - col_off)
+    tile_files = sorted(
+        path for path in TILES_DIR.glob("tile_r*_c*.tif")
+        if TILE_PATTERN.fullmatch(path.name)
+    )
+    if not tile_files:
+        raise FileNotFoundError(
+            f"No split Gale DEM tiles found in {TILES_DIR}. "
+            "Run split_gale_dem.py before the terrain pipeline."
+        )
 
-        window = Window(col_off, row_off, win_w, win_h)
-        dem = src.read(1, window=window).astype(np.float32)
+    print(f"[1/3] Scanning {len(tile_files)} DEM tiles one at a time...")
+    terrain = TiledRasterGrid(TILES_DIR)
+    elevation_stats = terrain.elevation_stats_m()
 
-        # Mask out nodata and extreme negative placeholders
-        if src.nodata is not None:
-            dem = np.where(dem == src.nodata, np.nan, dem)
-        dem = np.where(dem < -10000.0, np.nan, dem)
-
-        degree_res = float(src.res[0])
-        res_m = degree_res * 59270.0 if degree_res < 0.01 else degree_res
-
-    # Track invalid pixels before filling NaNs for gradient math
-    nan_mask = np.isnan(dem)
-    median_elev = float(np.nanmedian(dem)) if not np.all(nan_mask) else -4500.0
-    dem_clean = np.where(nan_mask, median_elev, dem)
-
-    print("[2/4] Computing physical slope gradients...")
-    dy, dx = np.gradient(dem_clean, res_m)
-    slope_deg = np.degrees(np.arctan(np.hypot(dx, dy))).astype(np.float32)
-
-    # Mark any original NoData pixels as 90-degree impassable walls
-    slope_deg = np.where(nan_mask, 90.0, slope_deg)
-
-    print(f"[3/4] Parsing Curiosity REMS weather telemetry from {rems_path.name}...")
+    print(f"[2/3] Parsing Curiosity REMS weather telemetry from {rems_path.name}...")
     hourly_telemetry = []
     if rems_path.exists():
         df = pd.read_csv(
@@ -109,30 +92,22 @@ def build_site_bundle():
             for hr in range(24)
         ]
 
-    print("[4/4] Saving uncompressed memory-mappable binaries (.npy)...")
-    dem_out = PROCESSED_DIR / "dem.npy"
-    slope_out = PROCESSED_DIR / "slope.npy"
+    print("[3/3] Saving tile-backed site metadata...")
     meta_out = PROCESSED_DIR / "site_metadata.json"
 
-    np.save(dem_out, dem_clean)
-    np.save(slope_out, slope_deg)
-
-    width_m = float(dem_clean.shape[1] * res_m)
-    height_m = float(dem_clean.shape[0] * res_m)
-
-    azure_status = upload_to_azure_blob([dem_out, slope_out])
+    width_m = float(terrain.shape[1] * terrain.resolution_m)
+    height_m = float(terrain.shape[0] * terrain.resolution_m)
+    azure_status = upload_to_azure_blob(list(terrain.tile_paths))
 
     metadata = {
         "site_name": "Gale Crater - Mount Sharp EVA Sector",
         "cloud_provider": "Microsoft Azure Hybrid Edge",
         "azure_blob_status": azure_status,
-        "grid_shape": [int(dem_clean.shape[0]), int(dem_clean.shape[1])],
-        "resolution_m": round(res_m, 2),
+        "storage_status": "local_tiled_cache",
+        "grid_shape": [int(terrain.shape[0]), int(terrain.shape[1])],
+        "resolution_m": round(terrain.resolution_m, 2),
         "extent_m": {"width": round(width_m, 2), "height": round(height_m, 2)},
-        "elevation_stats_m": {
-            "min": round(float(np.min(dem_clean)), 2),
-            "max": round(float(np.max(dem_clean)), 2),
-        },
+        "elevation_stats_m": elevation_stats,
         "waypoints": [
             {"id": "hab_alpha", "x": 200, "y": 200},
             {"id": "wp_ridge", "x": 1500, "y": 1800},
@@ -147,7 +122,7 @@ def build_site_bundle():
     if AZURE_AVAILABLE and os.getenv("AZURE_STORAGE_CONNECTION_STRING"):
         upload_to_azure_blob([meta_out])
 
-    print("\n[SUCCESS] Memory-mapped terrain bundle ready in <2 seconds.")
+    print("\n[SUCCESS] Tile-backed terrain metadata is ready.")
 
 
 if __name__ == "__main__":

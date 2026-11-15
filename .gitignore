@@ -31,6 +31,7 @@ backend/data/processed/
 *.npz
 *.IMG
 *.tif
+*.tif.aux.xml
 *.tiff
 *.TAB
 *.tab
