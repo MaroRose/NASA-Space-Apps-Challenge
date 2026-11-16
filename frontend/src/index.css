@@ -10,3 +10,12 @@ body,
   height: 100%;
   margin: 0;
 }
+
+/* The page itself never scrolls; panels scroll inside. This keeps pull-to-refresh
+   and rubber-banding from fighting the map drag on touch screens. */
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}

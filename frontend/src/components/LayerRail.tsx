@@ -20,19 +20,7 @@ export function LayerRail({ layers, onChange }: LayerRailProps) {
   const on = Object.values(layers).filter(Boolean).length;
 
   return (
-    <aside
-      style={{
-        flex: "0 1 236px",
-        minWidth: 200,
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        padding: 16,
-        borderRight: "1px solid var(--border)",
-        background: "var(--surface)",
-        overflowY: "auto",
-      }}
-    >
+    <aside className="side-panel side-panel--layers">
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
         <h2
           style={{

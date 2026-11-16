@@ -1,0 +1,107 @@
+/* Map stage: the map viewport, its floating overlay cards and the elevation strip.
+   Breakpoints match layout.css (phone < 768px). */
+
+/* ---------- Map stage ---------- */
+
+.map-stage {
+  grid-area: stage;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.map-stage__viewport {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.map-overlay {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(18, 22, 29, 0.94);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.map-overlay--inspector {
+  top: 16px;
+  left: 16px;
+  min-width: 180px;
+  font-family: var(--font-mono);
+}
+
+.map-overlay--legend {
+  bottom: 16px;
+  left: 16px;
+  width: min(220px, calc(100% - 32px));
+}
+
+/* ---------- Elevation profile ---------- */
+
+.elevation-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.elevation-profile__chart {
+  display: block;
+  width: 100%;
+  height: 110px;
+}
+
+/* Insets match the SVG plot area: x runs from 40 to 990 of a 1000-wide viewBox. */
+.elevation-profile__axis {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 1% 0 4%;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+/* ---------- Phone ---------- */
+
+@media (max-width: 767px) {
+  .map-overlay {
+    padding: 8px 10px;
+  }
+
+  /* Half-width caps keep the inspector clear of the top-right traverse button. */
+  .map-overlay--inspector {
+    top: 8px;
+    left: 8px;
+    min-width: 0;
+    max-width: calc(50% - 12px);
+  }
+
+  .map-overlay--legend {
+    bottom: 8px;
+    left: 8px;
+    width: min(220px, calc(100% - 16px));
+  }
+
+  .elevation-profile {
+    padding: 8px 12px 10px;
+  }
+
+  .elevation-profile__chart {
+    height: 72px;
+  }
+}
+
+/* Short landscape screens: the map needs every pixel of height. */
+@media (max-height: 480px) {
+  .elevation-profile {
+    display: none;
+  }
+}
