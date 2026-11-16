@@ -1,2 +1,2 @@
-totalPathLength,totalTime,fuelCost
-1163.8761,0.0,0.0
+totalPathLength,totalTime,fuelCost,payload,initialFuel,remainingFuel,velocity,fuelEfficiency,fuelConsumptionRate
+1163.8761,603.1027301,232.77522,50,100,-132.77522,10,5,0.2

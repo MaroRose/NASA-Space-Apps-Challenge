@@ -317,9 +317,21 @@ export class PathFinder {
   }
 
   missionOutputCsv() {
+    this.calculateTotalPathLength();
+    this.calculateFuelCost();
     return [
-      "totalPathLength,totalTime,fuelCost,payload",
-      `${this.calculateTotalPathLength()},${this.calculateTotalTime()},${this.calculateFuelCost()},${this.calculatePayloadWeight()}`,
+      "totalPathLength,totalTime,fuelCost,payload,initialFuel,remainingFuel,velocity,fuelEfficiency,fuelConsumptionRate",
+      [
+        this.missionInputData.totalPathLength,
+        this.missionInputData.totalTime,
+        this.missionInputData.fuelCost,
+        this.calculatePayloadWeight(),
+        this.missionInputData.initialFuel,
+        this.missionInputData.remainingFuel,
+        this.missionInputData.velocity,
+        this.missionInputData.fuelEfficiency,
+        this.missionInputData.fuelConsumptionRate,
+      ].join(","),
     ].join("\n");
   }
 
