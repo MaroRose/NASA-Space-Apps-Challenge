@@ -35,3 +35,6 @@ backend/data/processed/
 *.tiff
 *.TAB
 *.tab
+.DS_Store
+.vscode/
+frontend/node_modules/

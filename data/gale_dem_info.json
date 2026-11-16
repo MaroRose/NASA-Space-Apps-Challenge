@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "file": "Gale_DEM_SMG_1m.tif",
+    "driver": "GTiff",
+    "width_px": 36000,
+    "height_px": 40100,
+    "bands": 1,
+    "dtype": "float32",
+    "nodata": -3.4028230607370965e+38,
+    "compression": null,
+    "block_shape": [
+      1,
+      36000
+    ],
+    "overviews": [],
+    "crs_name": "GCS_Mars_2000",
+    "crs_wkt": "GEOGCS[\"GCS_Mars_2000\",DATUM[\"D_Mars_2000\",SPHEROID[\"Mars_2000_IAU_IAG\",3396190,169.894447223612]],PRIMEM[\"Reference_Meridian\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST]]",
+    "units": "degrees",
+    "bounds": {
+      "west": 137.12247113204074,
+      "south": -4.925474311955847,
+      "east": 137.72981290693286,
+      "north": -4.248963057145466
+    },
+    "center": {
+      "lon": 137.4261420194868,
+      "lat": -4.587218684550656
+    },
+    "pixel_size_native": [
+      1.687060485811425e-05,
+      1.687060485811425e-05
+    ],
+    "pixel_size_m": [
+      0.997,
+      1.0
+    ],
+    "footprint_km": [
+      35.88,
+      40.1
+    ],
+    "tags": {
+      "AREA_OR_POINT": "Area"
+    }
+  },
+  "stride": 40,
+  "elevation": {
+    "valid_fraction": 1.0,
+    "min_m": -4638.8,
+    "max_m": 358.94,
+    "mean_m": -3819.67,
+    "std_m": 1041.35,
+    "relief_m": 4997.74,
+    "percentiles_m": {
+      "p1": -4539.91,
+      "p5": -4514.35,
+      "p25": -4450.96,
+      "p50": -4258.58,
+      "p75": -3707.72,
+      "p95": -1232.48,
+      "p99": 32.24
+    }
+  },
+  "slope": {
+    "sample_spacing_m": 39.9,
+    "mean_deg": 7.13,
+    "median_deg": 4.44,
+    "p95_deg": 21.46,
+    "max_deg": 56.98,
+    "area_pct_by_slope": {
+      "0-5deg": 54.02,
+      "5-10deg": 20.02,
+      "10-15deg": 11.43,
+      "15-20deg": 7.94,
+      "20-30deg": 5.71,
+      "30-90deg": 0.9
+    }
+  }
+}
