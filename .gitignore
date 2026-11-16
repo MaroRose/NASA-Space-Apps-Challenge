@@ -15,3 +15,4 @@ data/processed/
 *.tab
 .DS_Store
 .vscode/
+frontend/node_modules/
