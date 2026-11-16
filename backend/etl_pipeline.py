@@ -3,13 +3,18 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import rasterio
-from rasterio.windows import Window
+from rasterio.windows import Window, bounds as window_bounds, from_bounds
 
-RAW_DIR = Path("data/raw")
+RAW_DIR = Path("../../")
 PROCESSED_DIR = Path("data/processed")
 SECTOR_SIZE = 4000
-TARGET_RESOLUTION_M = 100.0
-
+OPTICAL_PX = 1600  # 2.5 m/px cut of the HiRISE ortho (4x sharper than the 10 m grid)
+TARGET_RESOLUTION_M = 10.0
+WAYPOINTS_M = [
+    ("hab_alpha", 200, 200),
+    ("bradbury_landing", 2920, 2140),
+    ("yellowknife_bay", 3180, 2190),
+]
 
 def _parse_rems_hourly(rems_path: Path) -> list[dict]:
     """Parses real 24-hour diurnal Curiosity REMS telemetry from a NASA PDS .tab file."""
@@ -56,7 +61,7 @@ def _parse_rems_hourly(rems_path: Path) -> list[dict]:
 
 def build_site_bundle():
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-    dem_path = RAW_DIR / "gale_test.tif"
+    dem_path = RAW_DIR / "Gale_DEM_SMG_1m.tif"
     rems_path = RAW_DIR / "rems_data.tab"
 
     print(f"[1/5] Window-extracting {SECTOR_SIZE}x{SECTOR_SIZE}m center sector from {dem_path.name}...")
@@ -67,6 +72,7 @@ def build_site_bundle():
         win_w = min(SECTOR_SIZE, src.width - col_off)
 
         window = Window(col_off, row_off, win_w, win_h)
+        win_bounds = window_bounds(window, src.transform)  # (west, south, east, north) in Mars degrees
         dem = src.read(1, window=window).astype(np.float32)
 
         if src.nodata is not None:
@@ -104,6 +110,17 @@ def build_site_bundle():
             for hr in range(24)
         ]
 
+    optical_path = RAW_DIR / "curiosity_hirise_mosaic.tif"
+    has_optical = optical_path.exists()
+    if has_optical:
+        print("[4b/5] Cutting the matching HiRISE ortho window (optical layer)...")
+        with rasterio.open(optical_path) as osrc:
+            owin = from_bounds(*win_bounds, transform=osrc.transform)
+            optical = osrc.read(1, window=owin, out_shape=(OPTICAL_PX, OPTICAL_PX))
+        np.save(PROCESSED_DIR / "optical.npy", optical.astype(np.uint8))
+    else:
+        print(f"[4b/5] {optical_path.name} not found. Skipping optical layer.")
+
     print("[5/5] Writing memory-mapped arrays and site_metadata.json...")
     np.save(PROCESSED_DIR / "dem.npy", dem_clean.astype(np.float32))
     np.save(PROCESSED_DIR / "slope.npy", slope_deg.astype(np.float32))
@@ -123,11 +140,21 @@ def build_site_bundle():
             "max": round(float(np.nanmax(dem_clean)), 2),
         },
         "waypoints": [
-            {"id": "hab_alpha", "x": 2, "y": 2},
-            {"id": "wp_ridge", "x": 15, "y": 18},
-            {"id": "wp_boxwork", "x": 32, "y": 32},
+            {"id": wp_id, "x": int(round(x_m / res_m)), "y": int(round(y_m / res_m))}
+            for wp_id, x_m, y_m in WAYPOINTS_M
         ],
         "hourly_telemetry": hourly_telemetry,
+        "window_bounds_deg": {
+            "west": round(win_bounds[0], 6), "south": round(win_bounds[1], 6),
+            "east": round(win_bounds[2], 6), "north": round(win_bounds[3], 6),
+        },
+        "layers": [
+            {"id": "imagery", "name": "Hillshade", "url": "/terrain/hillshade.png",
+             "attribution": "NASA/JPL/UArizona HiRISE DEM"},
+        ] + ([
+            {"id": "optical", "name": "Surface photo", "url": "/terrain/optical.png",
+             "attribution": "NASA/JPL/UArizona HiRISE orthoimage"},
+        ] if has_optical else []),
     }
 
     with open(PROCESSED_DIR / "site_metadata.json", "w") as f:

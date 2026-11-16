@@ -1,6 +1,7 @@
 # MarsWalk
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 1. Dowload the Processing library at https://processing.org/download
 2. Make sure all asset files are present in the data folder
 3. Enter Mission data into "MissionInputData.csv"
@@ -11,6 +12,8 @@
 
 1. Switch from Processing Mode to Native Java
 =======
+=======
+>>>>>>> c018a9451c980b368748c91055f31ce7b68e2d67
 A 2D path planner for astronauts on the surface of Mars. Pick a start and an end point on the terrain map, and MarsWalk plans a walking route that avoids slopes too steep to cross safely, then reports its distance, waypoints and the steepest slope along the way.
 
 Built for Hackathon 2026.
@@ -113,4 +116,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/route/plan \
 ## Processing prototype
 
 The `.pde` files and the root `data/` folder are an earlier prototype of the pathfinder, built in [Processing](https://processing.org/download) on lunar elevation data. It isn't used by the app. To run it, open `Elevation_Map_Challenge.pde` in the Processing IDE.
+<<<<<<< HEAD
 >>>>>>> 2b6f15d420920d7b4110507f279835cf86cec91d
+=======
+>>>>>>> c018a9451c980b368748c91055f31ce7b68e2d67

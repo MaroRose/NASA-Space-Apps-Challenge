@@ -1,0 +1,170 @@
+{
+  "site_name": "Gale Crater - Mount Sharp EVA Sector",
+  "storage_status": "local_mmap_cache",
+  "grid_shape": [
+    400,
+    400
+  ],
+  "resolution_m": 10.0,
+  "extent_m": {
+    "width": 3999.68,
+    "height": 3999.68
+  },
+  "elevation_stats_m": {
+    "min": -4530.96,
+    "max": -4475.31
+  },
+  "waypoints": [
+    {
+      "id": "hab_alpha",
+      "x": 20,
+      "y": 20
+    },
+    {
+      "id": "bradbury_landing",
+      "x": 292,
+      "y": 214
+    },
+    {
+      "id": "yellowknife_bay",
+      "x": 318,
+      "y": 219
+    }
+  ],
+  "hourly_telemetry": [
+    {
+      "sol_hour": 0,
+      "ambient_temp_c": -62.9,
+      "radiation_mgy_hr": 0.0112
+    },
+    {
+      "sol_hour": 1,
+      "ambient_temp_c": -65.4,
+      "radiation_mgy_hr": 0.0112
+    },
+    {
+      "sol_hour": 2,
+      "ambient_temp_c": -67.8,
+      "radiation_mgy_hr": 0.0111
+    },
+    {
+      "sol_hour": 3,
+      "ambient_temp_c": -69.7,
+      "radiation_mgy_hr": 0.0111
+    },
+    {
+      "sol_hour": 4,
+      "ambient_temp_c": -72.7,
+      "radiation_mgy_hr": 0.0112
+    },
+    {
+      "sol_hour": 5,
+      "ambient_temp_c": -72.9,
+      "radiation_mgy_hr": 0.0111
+    },
+    {
+      "sol_hour": 6,
+      "ambient_temp_c": -59.9,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 7,
+      "ambient_temp_c": -56.2,
+      "radiation_mgy_hr": 0.0108
+    },
+    {
+      "sol_hour": 8,
+      "ambient_temp_c": -48.1,
+      "radiation_mgy_hr": 0.011
+    },
+    {
+      "sol_hour": 9,
+      "ambient_temp_c": -44.2,
+      "radiation_mgy_hr": 0.0113
+    },
+    {
+      "sol_hour": 10,
+      "ambient_temp_c": -38.2,
+      "radiation_mgy_hr": 0.0115
+    },
+    {
+      "sol_hour": 11,
+      "ambient_temp_c": -27.7,
+      "radiation_mgy_hr": 0.0117
+    },
+    {
+      "sol_hour": 12,
+      "ambient_temp_c": -22.5,
+      "radiation_mgy_hr": 0.0119
+    },
+    {
+      "sol_hour": 13,
+      "ambient_temp_c": -20.7,
+      "radiation_mgy_hr": 0.012
+    },
+    {
+      "sol_hour": 14,
+      "ambient_temp_c": -13.1,
+      "radiation_mgy_hr": 0.0121
+    },
+    {
+      "sol_hour": 15,
+      "ambient_temp_c": -15.1,
+      "radiation_mgy_hr": 0.0122
+    },
+    {
+      "sol_hour": 16,
+      "ambient_temp_c": -21.3,
+      "radiation_mgy_hr": 0.0122
+    },
+    {
+      "sol_hour": 17,
+      "ambient_temp_c": -29.9,
+      "radiation_mgy_hr": 0.0121
+    },
+    {
+      "sol_hour": 18,
+      "ambient_temp_c": -43.5,
+      "radiation_mgy_hr": 0.0117
+    },
+    {
+      "sol_hour": 19,
+      "ambient_temp_c": -45.8,
+      "radiation_mgy_hr": 0.0115
+    },
+    {
+      "sol_hour": 20,
+      "ambient_temp_c": -45.8,
+      "radiation_mgy_hr": 0.0115
+    },
+    {
+      "sol_hour": 21,
+      "ambient_temp_c": -45.8,
+      "radiation_mgy_hr": 0.0115
+    },
+    {
+      "sol_hour": 22,
+      "ambient_temp_c": -45.8,
+      "radiation_mgy_hr": 0.0115
+    },
+    {
+      "sol_hour": 23,
+      "ambient_temp_c": -45.8,
+      "radiation_mgy_hr": 0.0115
+    }
+  ],
+  "layers": [
+    {
+      "id": "imagery",
+      "name": "Hillshade",
+      "url": "/terrain/hillshade.png",
+      "attribution": "NASA/JPL/UArizona HiRISE DEM"
+    },
+    {
+      "id": "optical",
+      "name": "Surface photo",
+      "url": "/terrain/optical.png",
+      "attribution": "NASA/JPL/UArizona HiRISE orthoimage"
+    }
+  ]
+}

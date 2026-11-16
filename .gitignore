@@ -7,8 +7,6 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
-dist-ssr
 *.local
 
 .vscode/*
@@ -33,6 +31,10 @@ backend/data/processed/
 *.npz
 *.IMG
 *.tif
+*.tif.aux.xml
 *.tiff
 *.TAB
 *.tab
+.DS_Store
+.vscode/
+frontend/node_modules/
