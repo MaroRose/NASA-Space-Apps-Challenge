@@ -1,6 +1,7 @@
 import type { GridCell, RoutePlanResponse, SiteOverview } from "../types/terrain.ts";
 import type { ReactNode } from "react";
 import { type GridGeoref, cellToLatLon, formatLatLon } from "../lib/marsCoords.ts";
+import { classifyRouteStatus } from "../lib/routeStatus.ts";
 
 export type PlacingTarget = "start" | "end";
 
@@ -69,26 +70,10 @@ export function RoutePanel({
 }: RoutePanelProps) {
   const latLonOf = (cell: GridCell | null) =>
     georef && cell ? formatLatLon(cellToLatLon(georef, cell.x, cell.y, site.resolution_m)) : null;
-  const exceedsLimit = route && route.max_slope_encountered_deg > maxSlopeDeg;
-  const nearLimit = route && !exceedsLimit && route.max_slope_encountered_deg > maxSlopeDeg - 5;
-  const status = exceedsLimit ? "NO-GO" : nearLimit ? "CAUTION" : "GO";
-  const statusColor = exceedsLimit ? "var(--danger)" : nearLimit ? "var(--accent)" : "var(--info)";
+  const statusBadge = classifyRouteStatus(route, maxSlopeDeg);
 
   return (
-    <aside
-      style={{
-        flex: "0 1 320px",
-        minWidth: 260,
-        maxHeight: "100%",
-        display: "flex",
-        flexDirection: "column",
-        gap: 14,
-        padding: 16,
-        borderLeft: "1px solid var(--border)",
-        background: "var(--surface)",
-        overflowY: "auto",
-      }}
-    >
+    <aside className="side-panel side-panel--route">
       <div
         style={{
           display: "flex",
@@ -115,11 +100,11 @@ export function RoutePanel({
             fontWeight: 700,
             fontSize: 11,
             letterSpacing: "0.06em",
-            color: exceedsLimit ? "#fff" : "var(--accent-ink)",
-            background: statusColor,
+            color: statusBadge?.inkColor ?? "var(--accent-ink)",
+            background: statusBadge?.color ?? "var(--info)",
           }}
         >
-          {route ? status : "—"}
+          {statusBadge?.status ?? "—"}
         </span>
       </div>
 
@@ -257,6 +242,7 @@ export function RoutePanel({
 
       <button
         type="button"
+        className="route-panel__recompute"
         onClick={onRecompute}
         disabled={loading}
         style={{

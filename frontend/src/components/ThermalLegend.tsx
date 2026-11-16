@@ -13,23 +13,7 @@ export function ThermalLegend({ legend, cursorValue }: ThermalLegendProps) {
       : null;
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        left: 16,
-        bottom: 16,
-        display: "flex",
-        flexDirection: "column",
-        gap: 4,
-        padding: "10px 12px",
-        width: 220,
-        background: "rgba(18,22,29,0.94)",
-        border: "1px solid var(--border)",
-        borderRadius: 10,
-        fontSize: 11,
-        pointerEvents: "none",
-      }}
-    >
+    <div className="map-overlay map-overlay--legend">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <span className="eyebrow">THERMAL INERTIA</span>
         <span className="mono" style={{ color: "var(--text)" }}>

@@ -36,7 +36,7 @@ function Row({ label, value, accent }: { label: string; value: string; accent?: 
 }
 
 const buttonStyle = (active: boolean): React.CSSProperties => ({
-  minHeight: 36,
+  minHeight: "var(--control-min-height)",
   padding: "6px 10px",
   borderRadius: 10,
   border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
@@ -138,7 +138,7 @@ export function PositionPanel({
                 border: `1px solid ${inputError ? "var(--danger)" : "var(--border)"}`,
                 background: "var(--surface-2)",
                 color: "var(--text)",
-                fontSize: 12,
+                fontSize: "var(--input-font-size)",
               }}
             />
           </label>

@@ -15,15 +15,7 @@ const VIEW_H = 120;
 export function ElevationProfile({ route, maxSlopeDeg }: ElevationProfileProps) {
   if (!route || route.path_coordinates.length < 2) {
     return (
-      <div
-        style={{
-          padding: "10px 16px",
-          borderTop: "1px solid var(--border)",
-          background: "var(--surface)",
-          fontSize: 11,
-          color: "var(--text-muted)",
-        }}
-      >
+      <div className="elevation-profile" style={{ fontSize: 11, color: "var(--text-muted)" }}>
         Elevation profile appears once a route is computed.
       </div>
     );
@@ -70,16 +62,7 @@ export function ElevationProfile({ route, maxSlopeDeg }: ElevationProfileProps) 
     ` L${toX(totalDist)} ${VIEW_H - 10} L${toX(0)} ${VIEW_H - 10} Z`;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 6,
-        padding: "10px 16px 12px",
-        borderTop: "1px solid var(--border)",
-        background: "var(--surface)",
-      }}
-    >
+    <div className="elevation-profile">
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 12 }}>
         <span style={{ fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: "0.1em", color: "var(--text-muted)" }}>
           ELEVATION PROFILE
@@ -88,7 +71,12 @@ export function ElevationProfile({ route, maxSlopeDeg }: ElevationProfileProps) 
           {points.length} path points · {(totalDist).toFixed(0)} m
         </span>
       </div>
-      <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} preserveAspectRatio="none" style={{ width: "100%", height: 110 }}>
+      <svg
+        viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+        preserveAspectRatio="none"
+        className="elevation-profile__chart"
+        aria-hidden="true"
+      >
         <g stroke="var(--border)" strokeWidth={1}>
           <path d={`M40 20 H${VIEW_W - 10} M40 50 H${VIEW_W - 10} M40 80 H${VIEW_W - 10}`} />
         </g>
@@ -104,13 +92,12 @@ export function ElevationProfile({ route, maxSlopeDeg }: ElevationProfileProps) 
             vectorEffect="non-scaling-stroke"
           />
         ))}
-        <text x={toX(0)} y={VIEW_H - 4} className="mono" fontSize={9} fill="var(--text-muted)">
-          0 m
-        </text>
-        <text x={toX(totalDist)} y={VIEW_H - 4} textAnchor="end" className="mono" fontSize={9} fill="var(--text-muted)">
-          {totalDist.toFixed(0)} m
-        </text>
       </svg>
+      {/* HTML, not SVG text: the chart stretches with preserveAspectRatio="none", which would squash glyphs. */}
+      <div className="elevation-profile__axis mono">
+        <span>0 m</span>
+        <span>{totalDist.toFixed(0)} m</span>
+      </div>
     </div>
   );
 }

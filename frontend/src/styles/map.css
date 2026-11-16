@@ -81,11 +81,13 @@
   color: var(--rover);
 }
 
+/* Top-right so it never collides with the thermal legend in the bottom-left corner. */
 .terrain-map .rover-fit {
   position: absolute;
-  left: 16px;
-  bottom: 16px;
+  top: 16px;
+  right: 16px;
   z-index: 1000;
+  min-height: var(--control-min-height);
   padding: 6px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -93,4 +95,26 @@
   color: var(--text);
   font: 600 11px var(--font-body);
   cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  /* Half-width cap mirrors the inspector card in stage.css so the two never overlap. */
+  .terrain-map .rover-fit {
+    top: 8px;
+    right: 8px;
+    max-width: calc(50% - 12px);
+  }
+}
+
+/* A 14px diamond is too small for a fingertip; widen the hit area without changing the look. */
+@media (pointer: coarse) {
+  .wp-marker {
+    position: relative;
+  }
+
+  .wp-marker::before {
+    content: "";
+    position: absolute;
+    inset: -14px;
+  }
 }
