@@ -9,7 +9,7 @@ import numpy as np
 from pydantic import BaseModel, Field
 import router_engine
 
-PROCESSED_DIR = Path("data/processed")
+PROCESSED_DIR = Path(__file__).resolve().parent / "data" / "processed"
 martian_state = {}
 
 
@@ -38,8 +38,8 @@ def _generate_teammate_fallback_grid(size: int = 1000):
         "elevation_stats_m": {"min": round(float(np.min(dem)), 2), "max": round(float(np.max(dem)), 2)},
         "waypoints": [
             {"id": "hab_alpha", "x": 100, "y": 100},
-            {"id": "wp_ridge", "x": 500, "y": 500},
-            {"id": "wp_boxwork", "x": 800, "y": 800},
+            {"id": "bradbury_landing", "x": 730, "y": 535},
+            {"id": "yellowknife_bay", "x": 795, "y": 548},
         ],
         "hourly_telemetry": [
             {"sol_hour": hr, "ambient_temp_c": round(-65.0 + 40.0 * math.sin(hr / 24.0 * math.pi), 1), "radiation_mgy_hr": 0.011}
@@ -207,42 +207,6 @@ async def inspect_point(x: float = Query(...), y: float = Query(...)):
     }
 
 
-@app.get("/api/v1/terrain/points")
-async def inspect_points(
-    min_x: int = Query(..., ge=0),
-    min_y: int = Query(..., ge=0),
-    max_x: int = Query(..., ge=0),
-    max_y: int = Query(..., ge=0),
-    step_size: int = Query(..., gt=0),
-):
-    """Returns terrain data for each grid point in the inclusive bounds."""
-    dem = martian_state["dem"]
-    slope = martian_state["slope"]
-    rows, cols = dem.shape
-
-    if min_x > max_x or min_y > max_y:
-        raise HTTPException(
-            status_code=422,
-            detail="Minimum coordinates must not exceed maximum coordinates.",
-        )
-    if max_x >= cols or max_y >= rows:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Coordinates must be within the terrain grid (x: 0-{cols - 1}, y: 0-{rows - 1}).",
-        )
-
-    return [
-        {
-            "x": x,
-            "y": y,
-            "elev_m": round(float(dem[y, x]), 2),
-            "slope_deg": round(float(slope[y, x]), 2),
-        }
-        for x in range(min_x, max_x + 1, step_size)
-        for y in range(min_y, max_y + 1, step_size)
-    ]
-
-
 @app.post("/api/v1/route/plan")
 @app.post("/api/v1/route")
 async def calculate_route_post(request: RouteRequest):
@@ -262,3 +226,17 @@ async def calculate_route_get(
         start_x=start_x, start_y=start_y, end_x=end_x, end_y=end_y, max_slope_deg=max_slope_deg
     )
     return _execute_routing(req)
+
+
+# ---------------------------------------------------------------------------
+# Serve the built frontend (frontend/dist copied to backend/static at deploy).
+# This mount MUST stay at the bottom of the file, after every API route,
+# or it will swallow the /api/v1/* paths.
+# ---------------------------------------------------------------------------
+from fastapi.staticfiles import StaticFiles
+
+_static_dir = Path(__file__).resolve().parent / "static"
+if _static_dir.is_dir():
+    app.mount("/", StaticFiles(directory=_static_dir, html=True), name="frontend")
+else:
+    print(f"[BOOT] No frontend build found at {_static_dir} - API-only mode.")

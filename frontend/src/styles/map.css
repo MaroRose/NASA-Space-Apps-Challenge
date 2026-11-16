@@ -1,0 +1,96 @@
+.terrain-map.leaflet-container {
+  background: var(--bg);
+  font-family: var(--font-body);
+  cursor: crosshair;
+}
+
+.terrain-map .hazard-raster {
+  image-rendering: pixelated;
+}
+
+.wp-marker {
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  background: var(--surface);
+  border: 2px solid var(--text-soft);
+  transform: rotate(45deg);
+  cursor: pointer;
+}
+
+.wp-marker--hab {
+  background: var(--info);
+  border-color: var(--bg);
+  border-radius: 3px;
+  transform: none;
+}
+
+.terrain-map .wp-label {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 12px;
+  text-shadow: 0 0 4px var(--bg), 0 0 4px var(--bg);
+}
+
+.terrain-map .wp-label::before {
+  display: none;
+}
+
+.terrain-map .leaflet-bar a {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.position-marker {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  border: 3px solid var(--text);
+  background: var(--info);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 12px var(--info);
+}
+
+.rover-marker {
+  display: block;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--rover);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--rover);
+}
+
+.rover-marker--current {
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  background: var(--bg);
+  border: 3px solid var(--rover);
+}
+
+.terrain-map .rover-label {
+  color: var(--rover);
+}
+
+.terrain-map .rover-fit {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: 600 11px var(--font-body);
+  cursor: pointer;
+}
