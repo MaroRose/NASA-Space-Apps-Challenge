@@ -108,11 +108,7 @@ export class PathFinder {
       x: this.readCoordinate("xStartPosition"),
       y: this.readCoordinate("yStartPosition"),
     };
-    this.endPoint = {
-      x: this.readCoordinate("xEndPosition"),
-      y: this.readCoordinate("yEndPosition"),
-    };
-
+    this.waypoints = this.readWaypoints();
 
     this.missionInputData = {
       payloadWeight: this.readNumber("payloadWeight"),
@@ -133,6 +129,38 @@ export class PathFinder {
     console.log(this.missionInputData);
     
     this.missionMetrics = new MissionMetrics(this);
+  }
+
+  readWaypoints() {
+    const waypointIndices = new Set();
+    for (const field of Object.keys(this.mission)) {
+      const match = field.match(/^[xy]Waypoint(\d+)Position$/);
+      if (match) waypointIndices.add(Number(match[1]));
+    }
+
+    if (waypointIndices.size === 0) {
+      return [{
+        x: this.readCoordinate("xEndPosition"),
+        y: this.readCoordinate("yEndPosition"),
+      }];
+    }
+
+    const orderedIndices = [...waypointIndices].sort((a, b) => a - b);
+    if (orderedIndices.some((index, position) => index !== position + 1)) {
+      throw new Error("Waypoint columns must be numbered consecutively starting at 1.");
+    }
+
+    return orderedIndices.map((index) => {
+      const xField = `xWaypoint${index}Position`;
+      const yField = `yWaypoint${index}Position`;
+      if (!this.mission[xField]?.trim() || !this.mission[yField]?.trim()) {
+        throw new Error(`Waypoint ${index} must include both X and Y coordinates.`);
+      }
+      return {
+        x: this.readCoordinate(xField),
+        y: this.readCoordinate(yField),
+      };
+    });
   }
 
   readNumber(field) {
@@ -184,20 +212,19 @@ export class PathFinder {
       reversed.push({ x, y, z: this.elevationAt(x, y) });
       index = parent[index];
     }
-    this.path = reversed.reverse();
+    return reversed.reverse();
   }
 
-  calculatePath() {
-    this.path = [];
-    const { x: startX, y: startY } = this.startPoint;
-    const { x: endX, y: endY } = this.endPoint;
+  calculateLeg(startPoint, endPoint, legNumber) {
+    const { x: startX, y: startY } = startPoint;
+    const { x: endX, y: endY } = endPoint;
     const insideMap = (x, y) => x >= 0 && x < this.width && y >= 0 && y < this.height;
 
     if (!insideMap(startX, startY) || !insideMap(endX, endY)) {
-      throw new RangeError("Mission start and end points must be inside the map.");
+      throw new RangeError(`Route leg ${legNumber} has a waypoint outside the map.`);
     }
     if (!this.isTraversable(startX, startY) || !this.isTraversable(endX, endY)) {
-      throw new Error("Mission start and end points must have valid elevation data.");
+      throw new Error(`Route leg ${legNumber} has a waypoint without valid elevation data.`);
     }
 
     const cellCount = this.width * this.height;
@@ -218,8 +245,7 @@ export class PathFinder {
       const currentIndex = this.index(current.x, current.y);
       if (current.gCost > gScore[currentIndex] || closed[currentIndex]) continue;
       if (currentIndex === endIndex) {
-        this.buildPath(parent, endX, endY);
-        return this.path;
+        return this.buildPath(parent, endX, endY);
       }
 
       closed[currentIndex] = 1;
@@ -257,12 +283,29 @@ export class PathFinder {
     throw new Error("No traversable path exists between the mission points.");
   }
 
+  calculatePath() {
+    this.path = [];
+    let legStart = this.startPoint;
+
+    this.waypoints.forEach((waypoint, index) => {
+      const legPath = this.calculateLeg(legStart, waypoint, index + 1);
+      this.path.push(...(index === 0 ? legPath : legPath.slice(1)));
+      legStart = waypoint;
+    });
+
+    return this.path;
+  }
+
   calculateTotalPathLength() {
     return this.missionMetrics.calculateTotalPathLength();
   }
 
   calculateTotalTime() {
     return this.missionMetrics.calculateTotalTime();
+  }
+
+  calculateTotalTimeWithStops(totalStopTime, k_p, k_f) {
+    return this.missionMetrics.calculateTotalTimeWithStops(totalStopTime, k_p, k_f);
   }
 
   calculateFuelCost() {

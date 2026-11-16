@@ -4,15 +4,58 @@ body {
   color: #e8edf2;
   background: #101820;
   font-family: system-ui, sans-serif;
+  box-sizing: border-box;
 }
 
 main {
-  max-width: 1100px;
+  max-width: 1500px;
   margin: 0 auto;
 }
 
 h1 {
+  margin: 0 0 1rem;
+}
+
+h2 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.95rem;
+  color: #b7d8f2;
+}
+
+#mission-layout {
+  display: grid;
+  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+aside {
+  padding: 1rem;
+  border: 1px solid #334452;
+  border-radius: 0.5rem;
+  background: #17232d;
+}
+
+aside > p:first-child {
   margin-top: 0;
+}
+
+aside section p {
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+#map-panel {
+  min-width: 0;
+  overflow: auto;
+  border: 1px solid #334452;
+  border-radius: 0.5rem;
+  background: #0b1117;
+}
+
+#sketch-container {
+  width: max-content;
+  min-width: 100%;
 }
 
 #status,
@@ -27,10 +70,10 @@ h1 {
 
 #controls {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  margin: 1rem 0;
 }
 
 #metrics {
@@ -55,4 +98,18 @@ canvas {
   display: block;
   max-width: 100%;
   height: auto;
+}
+
+@media (max-width: 760px) {
+  body {
+    padding: 1rem;
+  }
+
+  #mission-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #map-panel {
+    max-height: 70vh;
+  }
 }

@@ -1,9 +1,7 @@
-import { JSONHandler } from "./json-handler.js";
 import { parseMissionCsv, PathFinder } from "./path-finder.js";
 
 const mapPath = "../data/Martian_Elevation_Map.jpg";
 const missionPath = "../data/MissionInputData.csv";
-const metadataPath = "../data/gale_dem_info.json";
 
 const statusElement = document.querySelector("#status");
 const metricsElement = document.querySelector("#metrics");
@@ -32,7 +30,9 @@ function formatMissionInput(pathFinder) {
   const { payloadWeight, initialFuel, velocity, fuelEfficiency } = pathFinder.missionInputData;
   return [
     `Start: (${pathFinder.startPoint.x}, ${pathFinder.startPoint.y})`,
-    `Destination: (${pathFinder.endPoint.x}, ${pathFinder.endPoint.y})`,
+    ...pathFinder.waypoints.map(
+      (waypoint, index) => `Waypoint ${index + 1}: (${waypoint.x}, ${waypoint.y})`,
+    ),
     `Payload: ${payloadWeight}`,
     `Initial fuel: ${initialFuel}`,
     `Velocity: ${velocity}`,
@@ -43,7 +43,6 @@ function formatMissionInput(pathFinder) {
 new window.p5((p) => {
   let mapImage;
   let pathFinder;
-  let metadataHandler;
   let elevationGrid;
   let imageLoadError;
 
@@ -60,17 +59,25 @@ new window.p5((p) => {
 
     const nextPathFinder = new PathFinder(elevationGrid, width, height, missionCsv);
     nextPathFinder.calculatePath();
+
+    const stopTimePerWaypoint = 10;
+    const totalStopTime = stopTimePerWaypoint * nextPathFinder.waypoints.length;
+    const k_p = 0.1; // Define the constant k_p as needed
+    const k_f = 0.01; // Define the constant k_f as needed
+
+    const missionInput = formatMissionInput(nextPathFinder);
+    const metrics =
+      `Path length: ${nextPathFinder.calculateTotalPathLength().toFixed(2)} | ` +
+      `Time: ${nextPathFinder.calculateTotalTimeWithStops(totalStopTime, k_p, k_f).toFixed(2)} | ` +
+      `Fuel cost: ${nextPathFinder.calculateFuelCost().toFixed(2)} | ` +
+      `Payload: ${nextPathFinder.calculatePayloadWeight()}`;
+
     pathFinder = nextPathFinder;
-    p.resizeCanvas(width, height);
     missionDownload.disabled = false;
     pathDownload.disabled = false;
     missionUpload.disabled = false;
-    missionInputElement.textContent = formatMissionInput(pathFinder);
-    metricsElement.textContent =
-      `Path length: ${pathFinder.calculateTotalPathLength().toFixed(2)} | ` +
-      `Time: ${pathFinder.calculateTotalTime().toFixed(2)} | ` +
-      `Fuel cost: ${pathFinder.calculateFuelCost().toFixed(2)} | ` +
-      `Payload: ${pathFinder.calculatePayloadWeight()}`;
+    missionInputElement.textContent = missionInput;
+    metricsElement.textContent = metrics;
     setStatus(statusMessage);
   }
 
@@ -92,22 +99,6 @@ new window.p5((p) => {
       if (imageLoadError || !mapImage) {
         throw new Error(`Unable to load elevation map: ${mapPath}`);
       }
-      const [missionResponse, metadataResponse] = await Promise.all([
-        fetch(missionPath),
-        fetch(metadataPath),
-      ]);
-      if (!missionResponse.ok) {
-        throw new Error(`Unable to load mission data: ${missionPath}`);
-      }
-      if (!metadataResponse.ok) {
-        throw new Error(`Unable to load metadata: ${metadataPath}`);
-      }
-
-      const [missionCsv, metadata] = await Promise.all([
-        missionResponse.text(),
-        metadataResponse.json(),
-      ]);
-      metadataHandler = new JSONHandler(metadata);
       const width = mapImage.width;
       const height = mapImage.height;
 
@@ -124,22 +115,35 @@ new window.p5((p) => {
           elevationGrid[x * height + y] = brightness;
         }
       }
+      p.resizeCanvas(width, height);
+      missionUpload.disabled = false;
 
-      const metadataFile = metadataHandler.getJSON().metadata?.file;
-      loadMissionData(
-        missionCsv,
-        metadataFile ? `Map ready. Metadata source: ${metadataFile}` : "Map ready.",
-        true,
-      );
+      try {
+        const missionResponse = await fetch(missionPath);
+        if (!missionResponse.ok) {
+          setStatus(`Map ready. No default mission CSV found (${missionResponse.status}). Upload a CSV to plan a route.`);
+          return;
+        }
+        loadMissionData(await missionResponse.text(), "Map ready. Default mission loaded.", true);
+      } catch (error) {
+        setStatus(
+          `Map ready, but the default mission could not be loaded: ${
+            error instanceof Error ? error.message : String(error)
+          } Upload a CSV to plan a route.`,
+          true,
+        );
+      }
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error), true);
     }
   };
 
   p.draw = () => {
-    if (!mapImage || !pathFinder) return;
+    if (!mapImage) return;
 
     p.image(mapImage, 0, 0);
+    if (!pathFinder) return;
+
     p.push();
     p.noFill();
     p.stroke(255);
@@ -153,8 +157,14 @@ new window.p5((p) => {
     p.strokeWeight(5);
     p.stroke(255, 0, 0);
     p.point(pathFinder.startPoint.x, pathFinder.startPoint.y);
-    p.stroke(0, 0, 255);
-    p.point(pathFinder.endPoint.x, pathFinder.endPoint.y);
+    pathFinder.waypoints.forEach((waypoint, index) => {
+      p.stroke(index === pathFinder.waypoints.length - 1 ? 0 : 255, 120, 255);
+      p.point(waypoint.x, waypoint.y);
+      p.noStroke();
+      p.fill(255);
+      p.textSize(12);
+      p.text(String(index + 1), waypoint.x + 6, waypoint.y - 6);
+    });
 
     const x = Math.floor(p.mouseX);
     const y = Math.floor(p.mouseY);

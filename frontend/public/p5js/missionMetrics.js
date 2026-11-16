@@ -13,9 +13,17 @@ export class MissionMetrics {
     return this.missionInputData.totalPathLength;
   }
 
-  calculateTotalTime() {
+  calculateTotalTime(k_p, k_f) {
     const totalPathLength = this.calculateTotalPathLength();
-    this.missionInputData.totalTime = totalPathLength / this.missionInputData.velocity;
+    const payloadWeight = this.missionInputData.payloadWeight;
+    this.missionInputData.totalTime = totalPathLength * (k_p * payloadWeight + k_f) / this.missionInputData.velocity;
+    return this.missionInputData.totalTime;
+  }
+
+    calculateTotalTimeWithStops(totalStopTime, k_p, k_f) {
+    const totalPathLength = this.calculateTotalPathLength();
+    const payloadWeight = this.missionInputData.payloadWeight;
+    this.missionInputData.totalTime = totalPathLength * (k_p * payloadWeight + k_f) / this.missionInputData.velocity + totalStopTime;
     return this.missionInputData.totalTime;
   }
 

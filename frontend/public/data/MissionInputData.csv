@@ -1,2 +1,2 @@
-xStartPosition,yStartPosition,xEndPosition,yEndPosition,payloadWeight,initialFuel,velocity,fuelEfficiency
-100,100,500,500,50,100,10,5
+xStartPosition,yStartPosition,xWaypoint1Position,yWaypoint1Position,xWaypoint2Position,yWaypoint2Position,payloadWeight,initialFuel,velocity,fuelEfficiency
+100,100,300,300,500,500,50,100,10,5
